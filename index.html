@@ -1,0 +1,3081 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="theme-color" content="#1A56DB"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-title" content="ועד בית פלוס"/>
+  <title>ועד בית פלוס</title>
+  <link rel="manifest" href="./manifest.json"/>
+  <link rel="icon" href="./icon-192.png"/>
+  <link rel="apple-touch-icon" href="./icon-192.png"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue: #1A56DB;
+      --blue-dark: #1447B8;
+      --blue-light: #EBF2FF;
+      --green: #0E9F6E;
+      --green-light: #E8F7F2;
+      --red: #E02424;
+      --red-light: #FEF2F2;
+      --orange: #FF8C00;
+      --orange-light: #FFF7ED;
+      --gray-50: #F9FAFB;
+      --gray-100: #F3F4F6;
+      --gray-200: #E5E7EB;
+      --gray-400: #9CA3AF;
+      --gray-600: #4B5563;
+      --gray-800: #1F2937;
+      --white: #ffffff;
+      --radius: 14px;
+      --shadow: 0 2px 12px rgba(0,0,0,0.08);
+      --shadow-lg: 0 8px 30px rgba(0,0,0,0.12);
+    }
+
+    html { height: 100%; }
+    body {
+      font-family: 'Heebo', sans-serif;
+      background: var(--gray-50);
+      color: var(--gray-800);
+      min-height: 100vh;
+      max-width: 480px;
+      margin: 0 auto;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    /* ===== AUTH SCREEN ===== */
+    #auth-screen {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(160deg, var(--blue) 0%, #0f3a8a 100%);
+      padding: 40px 24px;
+      gap: 32px;
+    }
+    .auth-logo {
+      width: 80px; height: 80px;
+      background: rgba(255,255,255,0.15);
+      border-radius: 24px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 40px;
+    }
+    .auth-title {
+      font-size: 32px; font-weight: 800; color: white; text-align: center;
+    }
+    .auth-subtitle { font-size: 16px; color: rgba(255,255,255,0.7); text-align: center; }
+    .btn-google {
+      background: white; color: var(--gray-800);
+      border: none; border-radius: var(--radius);
+      padding: 16px 32px;
+      font-family: 'Heebo', sans-serif;
+      font-size: 16px; font-weight: 600;
+      cursor: pointer;
+      display: flex; align-items: center; gap: 12px;
+      box-shadow: var(--shadow-lg);
+      width: 100%; max-width: 320px; justify-content: center;
+    }
+    .btn-google:hover { transform: translateY(-1px); }
+    .btn-google svg { width: 22px; height: 22px; flex-shrink: 0; }
+    #auth-error {
+      color: #ffcdd2; font-size: 14px; text-align: center;
+      background: rgba(255,255,255,0.1); padding: 12px 20px;
+      border-radius: 10px; display: none;
+    }
+
+    /* ===== SETUP SCREEN ===== */
+    #setup-screen {
+      display: none;
+      min-height: 100vh;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(160deg, var(--blue) 0%, #0f3a8a 100%);
+      padding: 40px 24px;
+      gap: 20px;
+    }
+    .setup-card {
+      background: white; border-radius: var(--radius);
+      padding: 24px; box-shadow: var(--shadow-lg);
+      width: 100%; max-width: 360px;
+    }
+    .setup-card .form-group { margin-bottom: 14px; }
+
+    /* ===== APP SHELL ===== */
+    #app { display: none; flex-direction: column; min-height: 100vh; }
+
+    /* ===== HEADER ===== */
+    .app-header {
+      background: var(--blue);
+      padding: 20px 20px 28px;
+      color: white;
+    }
+    .header-top {
+      display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;
+    }
+    .header-greeting { font-size: 13px; opacity: 0.8; }
+    .header-name { font-size: 22px; font-weight: 700; }
+    .header-avatar {
+      width: 42px; height: 42px; border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700; font-size: 18px; cursor: pointer;
+    }
+    .btn-logout {
+      background: rgba(255,255,255,0.15); border: none; border-radius: 10px;
+      color: white; padding: 8px 14px; font-family: 'Heebo', sans-serif;
+      font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px;
+    }
+
+    /* ===== STATS ROW ===== */
+    .stats-row {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 10px; padding: 0 16px; margin-top: -18px; margin-bottom: 8px;
+    }
+    .stat-card {
+      background: white; border-radius: var(--radius);
+      padding: 14px 10px; text-align: center;
+      box-shadow: var(--shadow);
+    }
+    .stat-icon { font-size: 20px; margin-bottom: 4px; }
+    .stat-value { font-size: 20px; font-weight: 700; }
+    .stat-value.red { color: var(--red); }
+    .stat-value.orange { color: var(--orange); }
+    .stat-value.green { color: var(--green); }
+    .stat-label { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+
+    /* ===== SCREENS ===== */
+    .screen { display: none; flex-direction: column; flex: 1; }
+    .screen.active { display: flex; }
+
+    .screen-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 20px;
+      background: white;
+      border-bottom: 1px solid var(--gray-200);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .screen-title { font-size: 20px; font-weight: 700; }
+    .screen-body { flex: 1; overflow-y: auto; padding: 16px; }
+
+    /* ===== NAV ===== */
+    .bottom-nav {
+      display: flex; background: white;
+      border-top: 1px solid var(--gray-200);
+      position: sticky; bottom: 0;
+    }
+    .nav-item {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      padding: 10px 4px; cursor: pointer; border: none;
+      background: none; font-family: 'Heebo', sans-serif;
+      font-size: 11px; color: var(--gray-400);
+      gap: 3px; transition: color 0.15s;
+    }
+    .nav-item.active { color: var(--blue); }
+    .nav-item svg { width: 22px; height: 22px; }
+
+    /* ===== HOME ===== */
+    .home-header-area { background: var(--blue); padding: 20px 20px 70px; color: white; }
+    .home-greeting { font-size: 14px; opacity: 0.8; }
+    .home-name { font-size: 24px; font-weight: 800; margin-bottom: 0; }
+    .home-top-row { display: flex; justify-content: space-between; align-items: flex-start; }
+
+    .quick-grid {
+      display: grid; grid-template-columns: repeat(4,1fr);
+      gap: 10px; padding: 16px;
+    }
+    .quick-btn {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 8px; background: white; border-radius: var(--radius);
+      padding: 14px 8px; cursor: pointer; border: none;
+      box-shadow: var(--shadow); font-family: 'Heebo', sans-serif;
+    }
+    .quick-btn-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
+    }
+    .quick-btn span { font-size: 12px; font-weight: 600; color: var(--gray-800); }
+
+    .section-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 0 16px; margin: 8px 0 10px;
+    }
+    .section-title { font-size: 17px; font-weight: 700; }
+    .section-link { font-size: 13px; color: var(--blue); cursor: pointer; }
+
+    /* ===== CARDS ===== */
+    .card {
+      background: white; border-radius: var(--radius);
+      padding: 16px; box-shadow: var(--shadow); margin-bottom: 10px;
+    }
+    .card-empty {
+      background: white; border-radius: var(--radius);
+      padding: 24px; box-shadow: var(--shadow);
+      text-align: center; color: var(--gray-400); font-size: 14px;
+      margin: 0 16px 10px;
+    }
+
+    /* ===== RESIDENTS TABLE ===== */
+    .residents-table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th {
+      background: var(--blue); color: white;
+      padding: 10px 8px; text-align: right; font-weight: 600;
+      white-space: nowrap;
+    }
+    td { padding: 10px 8px; border-bottom: 1px solid var(--gray-100); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:nth-child(even) td { background: var(--gray-50); }
+    .badge {
+      display: inline-block; padding: 3px 8px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; white-space: nowrap;
+    }
+    .badge-green { background: var(--green-light); color: var(--green); }
+    .badge-orange { background: var(--orange-light); color: var(--orange); }
+    .badge-red { background: var(--red-light); color: var(--red); }
+    .badge-blue { background: var(--blue-light); color: var(--blue); }
+    .badge-gray { background: var(--gray-100); color: var(--gray-600); }
+
+    /* ===== PAYMENTS ===== */
+    .payment-progress { padding: 16px; }
+    .progress-bar-wrap { background: var(--gray-200); border-radius: 99px; height: 10px; overflow: hidden; margin: 8px 0; }
+    .progress-bar-fill { height: 100%; background: var(--green); border-radius: 99px; transition: width 0.5s; }
+    .progress-label { font-size: 13px; color: var(--gray-600); text-align: left; }
+
+    .payment-item {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 16px; background: white; border-radius: var(--radius);
+      box-shadow: var(--shadow); margin-bottom: 8px;
+    }
+    .payment-item-info { flex: 1; }
+    .payment-item-name { font-size: 15px; font-weight: 600; }
+    .payment-item-sub { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+    .payment-item-amount { font-size: 17px; font-weight: 700; margin-left: 12px; }
+
+    /* ===== ISSUES ===== */
+    .issue-card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 10px; }
+    .issue-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .issue-meta { font-size: 12px; color: var(--gray-400); margin-bottom: 8px; }
+    .issue-desc { font-size: 14px; color: var(--gray-600); margin-bottom: 12px; }
+    .issue-footer { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .priority-dchuf { background: #fef2f2; color: #e02424; }
+    .priority-beinoni { background: #fff7ed; color: #c2570b; }
+    .priority-namuch { background: #f0fdf4; color: #166534; }
+
+    .filter-tabs {
+      display: flex; gap: 8px; padding: 12px 16px;
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
+    }
+    .filter-tab {
+      padding: 7px 16px; border-radius: 99px; border: none;
+      font-family: 'Heebo', sans-serif; font-size: 13px; font-weight: 600;
+      cursor: pointer; white-space: nowrap;
+      background: var(--gray-100); color: var(--gray-600);
+    }
+    .filter-tab.active { background: var(--blue); color: white; }
+
+    /* ===== ANNOUNCEMENTS ===== */
+    .announce-card { background: white; border-radius: var(--radius); box-shadow: var(--shadow); padding: 16px; margin-bottom: 10px; }
+    .announce-title { font-size: 16px; font-weight: 700; margin-bottom: 6px; }
+    .announce-meta { font-size: 12px; color: var(--gray-400); margin-bottom: 8px; }
+    .announce-body { font-size: 14px; color: var(--gray-600); line-height: 1.6; }
+
+    /* ===== MODALS / FORMS ===== */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.5); z-index: 100;
+      align-items: flex-end; justify-content: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: white; border-radius: 20px 20px 0 0;
+      width: 100%; max-width: 480px; padding: 24px;
+      max-height: 90vh; overflow-y: auto;
+    }
+    .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 20px; }
+    .form-group { margin-bottom: 16px; }
+    .form-label { font-size: 13px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px; display: block; }
+    .form-input, .form-select, .form-textarea {
+      width: 100%; padding: 12px 14px;
+      border: 1.5px solid var(--gray-200); border-radius: 10px;
+      font-family: 'Heebo', sans-serif; font-size: 15px;
+      color: var(--gray-800); background: white;
+      outline: none; transition: border-color 0.15s;
+    }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--blue); }
+    .form-textarea { min-height: 100px; resize: vertical; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .btn-primary {
+      width: 100%; padding: 15px; background: var(--blue); color: white;
+      border: none; border-radius: var(--radius); font-family: 'Heebo', sans-serif;
+      font-size: 16px; font-weight: 700; cursor: pointer; margin-top: 8px;
+    }
+    .btn-primary:hover { background: var(--blue-dark); }
+    .btn-secondary {
+      width: 100%; padding: 13px; background: var(--gray-100); color: var(--gray-800);
+      border: none; border-radius: var(--radius); font-family: 'Heebo', sans-serif;
+      font-size: 15px; font-weight: 600; cursor: pointer; margin-top: 8px;
+    }
+    .btn-danger {
+      padding: 8px 14px; background: var(--red-light); color: var(--red);
+      border: none; border-radius: 8px; font-family: 'Heebo', sans-serif;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .btn-icon {
+      padding: 8px 14px; background: var(--blue-light); color: var(--blue);
+      border: none; border-radius: 8px; font-family: 'Heebo', sans-serif;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .btn-success {
+      padding: 8px 14px; background: var(--green-light); color: var(--green);
+      border: none; border-radius: 8px; font-family: 'Heebo', sans-serif;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+    }
+    .fab {
+      position: fixed; bottom: 80px; left: 20px;
+      width: 52px; height: 52px; border-radius: 50%;
+      background: var(--blue); color: white; border: none;
+      font-size: 26px; cursor: pointer; box-shadow: var(--shadow-lg);
+      display: none; align-items: center; justify-content: center; z-index: 50;
+    }
+    .fab.visible { display: flex; }
+
+    /* ===== TOAST ===== */
+    #toast {
+      position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: var(--gray-800); color: white; padding: 12px 24px;
+      border-radius: 99px; font-size: 14px; font-weight: 500;
+      opacity: 0; transition: all 0.3s; z-index: 200; white-space: nowrap;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ===== SPINNER ===== */
+    .spinner-wrap { display: flex; align-items: center; justify-content: center; padding: 40px; }
+    .spinner {
+      width: 36px; height: 36px; border: 3px solid var(--gray-200);
+      border-top-color: var(--blue); border-radius: 50%; animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ===== ADMIN BADGE ===== */
+    .admin-chip {
+      background: var(--orange-light); color: var(--orange);
+      font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 99px;
+    }
+
+    /* ===== PAYMENTS TABLE (overview) ===== */
+    .payments-overview { padding: 16px; }
+    .po-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .po-table th { background: var(--blue); color: white; padding: 9px 8px; text-align: right; font-weight: 600; }
+    .po-table td { padding: 9px 8px; border-bottom: 1px solid var(--gray-100); vertical-align: middle; }
+    .po-table tr:last-child td { border-bottom: none; }
+    .po-table tr:nth-child(even) td { background: var(--gray-50); }
+
+    .tabs-row {
+      display: flex; gap: 0; border-bottom: 2px solid var(--gray-200);
+      padding: 0 16px; background: white;
+    }
+    .tab-btn {
+      padding: 12px 16px; border: none; background: none;
+      font-family: 'Heebo', sans-serif; font-size: 14px; font-weight: 600;
+      color: var(--gray-400); cursor: pointer; border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+    }
+    .tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+  </style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="auth-screen">
+  <div>
+    <div class="auth-logo">🏢</div>
+  </div>
+  <div>
+    <div class="auth-title">ועד בית פלוס</div>
+    <div class="auth-subtitle">ניהול חכם לבניין שלך</div>
+  </div>
+  <button class="btn-google" onclick="signInWithGoogle()">
+    <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20H24v8h11.3C33.7 33.1 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C34.1 6.5 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20c11 0 19.7-8 19.7-20 0-1.3-.1-2.7-.1-4z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.5 15.1 18.9 12 24 12c3 0 5.7 1.1 7.8 2.9l5.7-5.7C34.1 6.5 29.3 4 24 4 16.3 4 9.7 8.4 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.9 13.4-5l-6.2-5.2C29.4 35.5 26.8 36 24 36c-5.2 0-9.6-2.9-11.3-7.1L6 34c3.3 6.5 9.9 10 18 10z"/><path fill="#1565C0" d="M43.6 20H24v8h11.3c-.9 2.4-2.5 4.4-4.6 5.8l6.2 5.2C40.6 35.6 44 30.2 44 24c0-1.3-.1-2.7-.4-4z"/></svg>
+    כניסה עם Google
+  </button>
+  <div id="auth-error"></div>
+</div>
+
+<!-- SETUP (first-time admin) -->
+<!-- SUPER ADMIN SCREEN -->
+<div id="super-admin-screen" style="display:none;min-height:100vh;background:var(--blue);flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;">
+  <div style="font-size:48px;margin-bottom:16px;">👑</div>
+  <div style="color:#fff;font-size:24px;font-weight:800;margin-bottom:8px;">Super Admin</div>
+  <div style="color:rgba(255,255,255,0.7);font-size:14px;margin-bottom:32px;">בחר מצב כניסה</div>
+  <div style="width:100%;max-width:400px;display:flex;flex-direction:column;gap:12px;">
+    <button class="btn-primary" style="background:#fff;color:var(--blue);font-size:16px;padding:16px;" onclick="enterAsAdmin()">
+      🏠 מנהל הערמונים 1, קריית ים
+    </button>
+    <button class="btn-primary" style="background:rgba(255,255,255,0.15);color:#fff;border:2px solid rgba(255,255,255,0.4);font-size:16px;padding:16px;" onclick="enterSupervisorMode()">
+      🔍 מצב פיקוח — כל הבניינים
+    </button>
+    <button class="btn-secondary" style="background:transparent;color:rgba(255,255,255,0.6);border:none;margin-top:8px;" onclick="logout()">התנתק</button>
+  </div>
+</div>
+
+<!-- RESTORE BUILDING MODAL -->
+<div class="modal-overlay" id="modal-restore-building">
+  <div class="modal">
+    <div class="modal-title" style="color:var(--blue);">♻️ שחזור בניין מגיבוי</div>
+    <div style="font-size:13px;color:var(--gray-600);margin-bottom:16px;">בחר קובץ גיבוי — הבניין יוקם מחדש עם כל הנתונים</div>
+    <div class="form-group">
+      <label class="form-label">קובץ גיבוי (JSON)</label>
+      <input type="file" accept="application/json" id="restore-file-input" class="form-input" onchange="executeRestoreBuilding(event)"/>
+    </div>
+    <button class="btn-secondary" style="width:100%;margin-top:8px;" onclick="closeModal('modal-restore-building')">ביטול</button>
+  </div>
+</div>
+
+<!-- SUPERVISOR SCREEN -->
+<div id="supervisor-screen" style="display:none;min-height:100vh;background:#f5f7fa;flex-direction:column;">
+  <div style="background:var(--blue);padding:20px 16px 16px;color:#fff;">
+    <div style="font-size:18px;font-weight:700;">🔍 מצב פיקוח</div>
+    <div style="font-size:13px;opacity:0.7;margin-top:4px;">בחר בניין לצפייה</div>
+  </div>
+  <div id="supervisor-buildings-list" style="padding:16px;"></div>
+  <div style="padding:16px;display:flex;flex-direction:column;gap:10px;">
+    <button class="btn-primary" onclick="openModal('modal-restore-building')">♻️ שחזר בניין מגיבוי</button>
+    <button class="btn-secondary" onclick="showSuperAdminScreen()">← חזרה</button>
+  </div>
+</div>
+
+<div id="setup-screen">
+  <div class="auth-logo">🏢</div>
+  <div>
+    <div class="auth-title">ברוך הבא!</div>
+    <div class="auth-subtitle">הקמת הבניין שלך</div>
+  </div>
+  <div class="setup-card">
+    <div class="form-group">
+      <label class="form-label">שם הועד / המנהל *</label>
+      <input class="form-input" id="setup-name" placeholder="לדוגמה: יוסי כהן"/>
+    </div>
+    <div class="form-group" style="position:relative;">
+      <label class="form-label">כתובת הבניין *</label>
+      <input class="form-input" id="setup-address" placeholder="רחוב, מספר, עיר" autocomplete="off" oninput="addressAutocomplete(this.value)"/>
+      <div style="font-size:11px;color:var(--gray-400);margin-top:4px;text-align:right;">הקלד רחוב ועיר — בחר הצעה ואז הוסף מספר בית</div>
+      <div id="address-suggestions" style="display:none;position:absolute;top:100%;right:0;left:0;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.1);z-index:999;max-height:200px;overflow-y:auto;"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">דמי ועד חודשיים (₪) *</label>
+      <input class="form-input" id="setup-fee" type="number" min="0" placeholder="200"/>
+    </div>
+    <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:12px;direction:rtl;">
+      <input type="checkbox" id="privacy-consent" style="margin-top:4px;width:18px;height:18px;cursor:pointer;"/>
+      <label for="privacy-consent" style="font-size:13px;color:#333;cursor:pointer;">
+        קראתי ואני מסכים/ה ל<span style="color:var(--blue);text-decoration:underline;cursor:pointer;" onclick="openModal('modal-privacy')">מדיניות הפרטיות</span>
+        ומסכים/ה לשימוש בנתוני הבניין לצורכי ניהול ודוחות.
+      </label>
+    </div>
+    <button class="btn-primary" onclick="completeSetup()">הקם את הבניין שלי</button>
+    <button class="btn-secondary" onclick="logout()">התנתק</button>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+
+  <!-- HOME SCREEN -->
+  <div id="screen-home" class="screen">
+    <div class="home-header-area">
+      <div style="display:grid; grid-template-columns:1fr auto 1fr; align-items:center; width:100%;">
+        <div style="justify-self:start;">
+          <div class="home-greeting" id="home-greeting">שלום,</div>
+          <div class="home-name" id="home-name">טוען...</div>
+          <div id="home-address" style="font-size:12px; opacity:0.75; margin-top:2px;"></div>
+        </div>
+        <div id="home-building-icon" style="width:52px; height:52px; background:rgba(255,255,255,0.15); border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:28px;">🏢</div>
+        <button class="btn-logout" onclick="logout()" style="justify-self:end;">יציאה</button>
+      </div>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-icon">🔧</div>
+        <div class="stat-value red" id="stat-issues">-</div>
+        <div class="stat-label">תקלות פתוחות</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">⏳</div>
+        <div class="stat-value orange" id="stat-pending">-</div>
+        <div class="stat-label">ממתין לתשלום</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value green" id="stat-paid">-</div>
+        <div class="stat-label">שולם החודש</div>
+      </div>
+    </div>
+
+    <div class="quick-grid">
+      <button class="quick-btn" onclick="navigate('residents')">
+        <div class="quick-btn-icon" style="background:#EBF2FF">👥</div>
+        <span>דיירים</span>
+      </button>
+      <button class="quick-btn" onclick="navigate('payments')">
+        <div class="quick-btn-icon" style="background:#E8F7F2">💰</div>
+        <span>כספים</span>
+      </button>
+      <button class="quick-btn" onclick="navigate('issues')">
+        <div class="quick-btn-icon" style="background:#FEF2F2">🔧</div>
+        <span>תחזוקה</span>
+      </button>
+      <button class="quick-btn" onclick="navigate('announcements')">
+        <div class="quick-btn-icon" style="background:#FFF7ED">📢</div>
+        <span>הודעות</span>
+      </button>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">הודעות אחרונות</div>
+      <div class="section-link" onclick="navigate('announcements')">הכל ›</div>
+    </div>
+    <div id="home-announcements" style="padding: 0 16px 8px;"></div>
+
+    <div class="section-header">
+      <div class="section-title">תקלות פתוחות</div>
+      <div class="section-link" onclick="navigate('issues')">הכל ›</div>
+    </div>
+    <div id="home-issues" style="padding: 0 16px 16px;"></div>
+
+    <div id="new-building-section" style="display:none;padding:0 16px 12px;">
+      <button class="btn-secondary" style="width:100%;" onclick="showSetupAsNewAdmin()">🏢 אני ועד בית — הקם בניין חדש</button>
+    </div>
+    <div id="backup-section" style="display:none;padding:0 16px 24px;">
+      <div class="section-header"><div class="section-title">גיבוי ושחזור</div></div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn-icon" style="flex:1;" onclick="exportData()">⬇️ גיבוי</button>
+        <button class="btn-icon" style="flex:1;" onclick="document.getElementById('import-file-input').click()">⬆️ שחזור</button>
+      </div>
+      <input type="file" id="import-file-input" accept="application/json" style="display:none" onchange="importData(event)"/>
+    </div>
+  </div>
+
+  <!-- RESIDENTS SCREEN -->
+  <div id="screen-residents" class="screen">
+    <div class="screen-header">
+      <div class="screen-title">דיירים</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span id="residents-admin-badge" style="display:none" class="admin-chip">מנהל</span>
+        <button id="btn-add-resident" style="display:none" class="btn-icon" onclick="openAddResident()">+ הוסף</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:16px 16px 8px;">
+      <div class="stat-card">
+        <div class="stat-value green" id="res-count-total">-</div>
+        <div class="stat-label">דירות</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value orange" id="res-count-admins">-</div>
+        <div class="stat-label">מנהלים</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" style="color:var(--blue)" id="res-count-tenants">-</div>
+        <div class="stat-label">דיירים</div>
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div style="padding:0 16px 12px;">
+      <input class="form-input" placeholder="חיפוש לפי שם, דירה, טלפון..." oninput="filterResidents(this.value)" id="res-search"/>
+    </div>
+
+    <!-- Table view toggle -->
+    <div class="tabs-row">
+      <button class="tab-btn active" onclick="setResView('table',this)">טבלה</button>
+      <button class="tab-btn" onclick="setResView('cards',this)">כרטיסים</button>
+    </div>
+
+    <div class="screen-body">
+      <div id="residents-table-view">
+        <div class="residents-table-wrap">
+          <table id="residents-table">
+            <thead>
+              <tr>
+                <th>דירה</th>
+                <th>שם</th>
+                <th>קומה</th>
+                <th>טלפון</th>
+                <th>סוג</th>
+                <th id="th-actions" style="display:none"></th>
+              </tr>
+            </thead>
+            <tbody id="residents-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="residents-cards-view" style="display:none" id="residents-cards"></div>
+    </div>
+  </div>
+
+  <!-- PAYMENTS SCREEN -->
+  <div id="screen-payments" class="screen">
+    <div class="screen-header">
+      <div class="screen-title">ניהול כספים</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+        <select id="payment-month-select" class="form-select" style="width:auto;padding:6px 10px;font-size:13px;" onchange="loadPayments()"></select>
+        <button id="btn-admin-finance" style="display:none" class="btn-icon" onclick="openAdminFinance()">⚙️ ניהול</button>
+      </div>
+    </div>
+
+    <!-- Summary cards -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:16px 16px 8px;">
+      <div class="stat-card" style="text-align:right;">
+        <div class="stat-value" style="color:var(--blue)" id="pay-total-expected">-</div>
+        <div class="stat-label">סה"כ לגבייה</div>
+      </div>
+      <div class="stat-card" style="text-align:right;">
+        <div class="stat-value green" id="pay-total-paid">-</div>
+        <div class="stat-label">שולם</div>
+      </div>
+      <div class="stat-card" style="text-align:right;">
+        <div class="stat-value orange" id="pay-total-pending">-</div>
+        <div class="stat-label">ממתין</div>
+      </div>
+      <div class="stat-card" style="text-align:right;">
+        <div class="stat-value green" id="pay-pct">-</div>
+        <div class="stat-label">אחוז גבייה</div>
+      </div>
+    </div>
+
+    <!-- Progress -->
+    <div class="payment-progress" style="padding:0 16px 12px;">
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="pay-progress-bar" style="width:0%"></div>
+      </div>
+      <div class="progress-label" id="pay-progress-label">0 מתוך 0 דירות שילמו</div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs-row">
+      <button class="tab-btn active" onclick="setPayView('overview',this)">סקירה</button>
+      <button class="tab-btn" onclick="setPayView('list',this)">רשימה</button>
+      <button class="tab-btn" onclick="setPayView('expenses',this)">הוצאות</button>
+      <button class="tab-btn" onclick="setPayView('balance',this)">מאזן</button>
+    </div>
+
+    <div class="screen-body">
+      <!-- Overview table -->
+      <div id="pay-view-overview">
+        <div id="pay-pending-section">
+          <div style="font-size:15px;font-weight:700;margin-bottom:10px;color:var(--orange);">⏳ ממתינים (</div>
+          <div id="pay-pending-list"></div>
+        </div>
+        <div id="pay-paid-section" style="margin-top:16px;">
+          <div style="font-size:15px;font-weight:700;margin-bottom:10px;color:var(--green);">✅ שילמו (</div>
+          <div id="pay-paid-list"></div>
+        </div>
+      </div>
+      <!-- List view -->
+      <div id="pay-view-list" style="display:none">
+        <div id="pay-full-list"></div>
+      </div>
+      <!-- Expenses view -->
+      <div id="pay-view-expenses" style="display:none">
+        <div id="expenses-list"></div>
+      </div>
+      <!-- Balance view -->
+      <div id="pay-view-balance" style="display:none">
+        <div id="balance-content"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ISSUES SCREEN -->
+  <div id="screen-issues" class="screen">
+    <div class="screen-header">
+      <div class="screen-title">קריאות תחזוקה</div>
+      <span id="issues-admin-badge" style="display:none" class="admin-chip">מנהל</span>
+    </div>
+    <div class="filter-tabs">
+      <button class="filter-tab active" onclick="filterIssues('all',this)">הכל</button>
+      <button class="filter-tab" onclick="filterIssues('פתוח',this)">פתוח</button>
+      <button class="filter-tab" onclick="filterIssues('בטיפול',this)">בטיפול</button>
+      <button class="filter-tab" onclick="filterIssues('סגור',this)">סגור</button>
+    </div>
+    <div class="screen-body" id="issues-list"></div>
+    <button class="fab" id="fab-issue" onclick="openAddIssue()">+</button>
+  </div>
+
+  <!-- ANNOUNCEMENTS SCREEN -->
+  <div id="screen-announcements" class="screen">
+    <div class="screen-header">
+      <div class="screen-title">הודעות</div>
+      <button id="btn-add-announce" style="display:none" class="btn-icon" onclick="openAddAnnounce()">+ פרסם</button>
+    </div>
+    <div class="screen-body" id="announcements-list"></div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <div class="bottom-nav">
+    <button class="nav-item active" onclick="navigate('home')" id="nav-home">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/></svg>
+      בית
+    </button>
+    <button class="nav-item" onclick="navigate('residents')" id="nav-residents">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 014-4h4a4 4 0 014 4v2"/><path d="M16 3.13a4 4 0 010 7.75"/><path d="M21 21v-2a4 4 0 00-3-3.87"/></svg>
+      דיירים
+    </button>
+    <button class="nav-item" onclick="navigate('payments')" id="nav-payments">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+      כספים
+    </button>
+    <button class="nav-item" onclick="navigate('issues')" id="nav-issues">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.7 6.3a1 1 0 000 1.4l1.6 1.6a1 1 0 001.4 0l3.77-3.77a6 6 0 01-7.94 7.94l-6.91 6.91a2.12 2.12 0 01-3-3l6.91-6.91a6 6 0 017.94-7.94l-3.76 3.76z"/></svg>
+      תחזוקה
+    </button>
+    <button class="nav-item" onclick="navigate('announcements')" id="nav-announcements">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      הודעות
+    </button>
+  </div>
+</div>
+
+<!-- MODALS -->
+
+<!-- Add/Edit Resident -->
+<div class="modal-overlay" id="modal-resident">
+  <div class="modal">
+    <div class="modal-title" id="modal-resident-title">הוסף דייר</div>
+    <input type="hidden" id="edit-resident-id"/>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">מספר דירה *</label>
+        <input class="form-input" id="r-apt" type="number" min="1" max="99" placeholder="1"/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">קומה *</label>
+        <input class="form-input" id="r-floor" type="number" min="0" max="20" placeholder="0"/>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">שם מלא *</label>
+      <input class="form-input" id="r-name" placeholder="ישראל ישראלי"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">טלפון</label>
+      <input class="form-input" id="r-phone" type="tel" placeholder="050-0000000"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">אימייל (לכניסה)</label>
+      <input class="form-input" id="r-email" type="email" placeholder="israel@gmail.com"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">תפקיד</label>
+      <select class="form-select" id="r-role">
+        <option value="tenant">דייר</option>
+        <option value="admin">ועד בית / מנהל</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">אופן תשלום</label>
+      <select class="form-select" id="r-payment-method">
+        <option value="transfer">העברה בנקאית</option>
+        <option value="cash">מזומן</option>
+        <option value="check">שיק</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">סכום ועד חודשי (₪)</label>
+      <input class="form-input" id="r-fee" type="number" placeholder="200"/>
+    </div>
+    <button class="btn-primary" onclick="saveResident()">שמור</button>
+    <button class="btn-icon" id="btn-delete-resident" style="display:none;width:100%;margin-top:8px;color:#d33;border-color:#d33;" onclick="deleteResident()">🗑️ מחק דייר</button>
+    <button class="btn-secondary" onclick="closeModal('modal-resident')">ביטול</button>
+  </div>
+</div>
+
+<!-- Add Payment -->
+<div class="modal-overlay" id="modal-payment">
+  <div class="modal">
+    <div class="modal-title">רשום תשלום</div>
+    <div class="form-group">
+      <label class="form-label">דירה *</label>
+      <select class="form-select" id="p-apt"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">חודש *</label>
+      <select class="form-select" id="p-month"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">סכום (₪) *</label>
+      <input class="form-input" id="p-amount" type="number" placeholder="200"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">אופן תשלום</label>
+      <select class="form-select" id="p-method">
+        <option value="transfer">💳 העברה בנקאית</option>
+        <option value="cash">💵 מזומן</option>
+        <option value="check">🧾 שיק</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">הערה</label>
+      <input class="form-input" id="p-note" placeholder="אופציונלי"/>
+    </div>
+    <button class="btn-primary" onclick="savePayment()">שמור</button>
+    <button class="btn-secondary" onclick="closeModal('modal-payment')">ביטול</button>
+  </div>
+</div>
+
+<!-- Add Issue -->
+<div class="modal-overlay" id="modal-issue">
+  <div class="modal">
+    <div class="modal-title" id="modal-issue-title">קריאת תחזוקה חדשה</div>
+    <input type="hidden" id="edit-issue-id"/>
+    <div class="form-group">
+      <label class="form-label">כותרת *</label>
+      <input class="form-input" id="i-title" placeholder="תיאור קצר של הבעיה"/>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">מיקום</label>
+        <input class="form-input" id="i-location" placeholder='כניסה, קומה 2...'/>
+      </div>
+      <div class="form-group">
+        <label class="form-label">דחיפות</label>
+        <select class="form-select" id="i-priority">
+          <option value="נמוך">נמוך</option>
+          <option value="בינוני" selected>בינוני</option>
+          <option value="דחוף">דחוף</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">תיאור</label>
+      <textarea class="form-textarea" id="i-desc" placeholder="פרטים נוספים..."></textarea>
+    </div>
+    <div class="form-group" id="i-status-group">
+      <label class="form-label">סטטוס</label>
+      <select class="form-select" id="i-status">
+        <option value="פתוח">פתוח</option>
+        <option value="בטיפול">בטיפול</option>
+        <option value="סגור">סגור</option>
+      </select>
+    </div>
+    <button class="btn-primary" onclick="saveIssue()">שמור</button>
+    <button class="btn-secondary" onclick="closeModal('modal-issue')">ביטול</button>
+  </div>
+</div>
+
+<!-- Add Announcement -->
+<div class="modal-overlay" id="modal-announce">
+  <div class="modal">
+    <div class="modal-title">הודעה חדשה</div>
+    <div class="form-group">
+      <label class="form-label">כותרת *</label>
+      <input class="form-input" id="a-title" placeholder="כותרת ההודעה"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">קטגוריה</label>
+      <select class="form-select" id="a-cat">
+        <option value="כללי">כללי</option>
+        <option value="תחזוקה">תחזוקה</option>
+        <option value="כספים">כספים</option>
+        <option value="דחוף">דחוף</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">תוכן *</label>
+      <textarea class="form-textarea" id="a-body" placeholder="כתוב את תוכן ההודעה כאן..."></textarea>
+    </div>
+    <button class="btn-primary" onclick="saveAnnounce()">פרסם הודעה 📢</button>
+    <button class="btn-secondary" onclick="closeModal('modal-announce')">ביטול</button>
+  </div>
+</div>
+
+<!-- Resident Payment History Modal -->
+<div class="modal-overlay" id="modal-resident-history">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <div class="modal-title" id="modal-history-title" style="margin-bottom:0;">היסטוריית תשלומים</div>
+      <button onclick="closeModal('modal-resident-history')" style="background:none;border:none;font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div id="modal-history-content"></div>
+  </div>
+</div>
+
+<!-- Add Expense Modal -->
+<div class="modal-overlay" id="modal-expense">
+  <div class="modal">
+    <div class="modal-title" id="modal-expense-title">הוצאה חדשה</div>
+    <input type="hidden" id="edit-expense-id"/>
+    <div class="form-group">
+      <label class="form-label">קטגוריה *</label>
+      <select class="form-select" id="exp-cat">
+        <option value="חשמל">חשמל</option>
+        <option value="מים">מים</option>
+        <option value="ניקיון">ניקיון</option>
+        <option value="מעלית">תחזוקת מעלית</option>
+        <option value="ביטוח">ביטוח</option>
+        <option value="כיבוי אש">כיבוי אש</option>
+        <option value="עמלות בנק">עמלות בנק</option>
+        <option value="תיקון">תיקון</option>
+        <option value="אחר">אחר</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">אמצעי תשלום</label>
+      <select class="form-select" id="exp-method">
+        <option value="bank">🏦 בנק</option>
+        <option value="cash">💵 מזומן</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">תיאור *</label>
+      <input class="form-input" id="exp-desc" placeholder="פירוט ההוצאה"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">סכום (₪) *</label>
+      <input class="form-input" id="exp-amount" type="number" placeholder="0"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">תאריך</label>
+      <input class="form-input" id="exp-date" type="date"/>
+    </div>
+    <button class="btn-primary" onclick="saveExpense()">שמור הוצאה</button>
+    <button class="btn-secondary" onclick="closeModal('modal-expense')">ביטול</button>
+  </div>
+</div>
+
+<!-- Admin Finance Modal -->
+<div class="modal-overlay" id="modal-admin-finance">
+  <div class="modal">
+    <div class="modal-title">⚙️ ניהול כספים</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button class="btn-primary" onclick="closeAdminFinance();openAddPayment();">➕ הוסף תשלום</button>
+      <button class="btn-primary" onclick="closeAdminFinance();openAddExpense();">➕ הוסף הוצאה</button>
+      <button class="btn-primary" onclick="closeAdminFinance();openLog();">📋 לוג תשלומים</button>
+      <button class="btn-primary" onclick="closeAdminFinance();generatePDF();">📄 הפק PDF</button>
+      <hr style="border:none;border-top:1px solid #eee;margin:4px 0;"/>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">💰 דמי ועד חודשיים (ברירת מחדל לכל הדירות)</label>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input class="form-input" id="input-monthly-fee" type="number" min="0" placeholder="200" style="flex:1;"/>
+          <button class="btn-success" onclick="saveMonthlyFee()">שמור</button>
+        </div>
+        <div id="monthly-fee-note" style="font-size:12px;color:var(--gray-500);margin-top:4px;"></div>
+      </div>
+      <hr style="border:none;border-top:1px solid #eee;margin:4px 0;"/>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">🏦 יתרת איזון (₪)</label>
+        <div style="font-size:12px;color:var(--gray-500);margin-bottom:6px;">סכום לאיזון המאזן באפליקציה עם הבנק בפועל. לדוגמה: אם המאזן מראה ‎-300₪ והבנק מראה ‎+3,000₪ — הזן 3,300₪</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <input class="form-input" id="input-opening-balance" type="number" placeholder="0" style="flex:1;"/>
+          <button class="btn-success" onclick="saveOpeningBalance()">שמור</button>
+        </div>
+      </div>
+      <hr style="border:none;border-top:1px solid #eee;margin:4px 0;"/>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-icon" style="flex:1;" onclick="closeAdminFinance();exportData()">⬇️ גיבוי</button>
+        <button class="btn-icon" style="flex:1;" onclick="closeAdminFinance();document.getElementById('import-file-input').click()">⬆️ שחזור</button>
+      </div>
+      <button class="btn-secondary" onclick="closeAdminFinance();openCashDeposit()">🏦 הפקד מזומן לבנק</button>
+      <button class="btn-secondary" style="color:#d33;border-color:#d33;" onclick="closeAdminFinance();openResetData()">🗑️ איפוס נתונים</button>
+      <button class="btn-secondary" onclick="closeAdminFinance()">סגור</button>
+    </div>
+  </div>
+</div>
+
+<!-- Payment Log Modal -->
+<div class="modal-overlay" id="modal-log">
+  <div class="modal">
+    <div class="modal-title">לוג תשלומים</div>
+    <div id="log-content"></div>
+  </div>
+</div>
+
+<!-- PDF generation (hidden) -->
+<div id="pdf-container" style="display:none"></div>
+
+<div id="toast"></div>
+
+<!-- Cash Deposit Modal -->
+<div class="modal-overlay" id="modal-cash-deposit">
+  <div class="modal">
+    <div class="modal-title">🏦 הפקדת מזומן לבנק</div>
+    <div style="font-size:13px;color:var(--gray-600);margin-bottom:12px;">הפקד סכום מקופת המזומן לחשבון הבנק</div>
+    <div class="form-group">
+      <label class="form-label">סכום להפקדה (₪) *</label>
+      <input class="form-input" id="deposit-amount" type="number" placeholder="0"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">תאריך</label>
+      <input class="form-input" id="deposit-date" type="date"/>
+    </div>
+    <div class="form-group">
+      <label class="form-label">הערה</label>
+      <input class="form-input" id="deposit-note" placeholder="אופציונלי"/>
+    </div>
+    <button class="btn-primary" onclick="saveCashDeposit()">💾 שמור הפקדה</button>
+    <button class="btn-secondary" style="margin-top:8px;" onclick="closeModal('modal-cash-deposit')">ביטול</button>
+  </div>
+</div>
+
+<!-- Privacy Policy Modal -->
+<div class="modal-overlay" id="modal-privacy">
+  <div class="modal" style="max-height:80vh;overflow-y:auto;">
+    <div class="modal-title">מדיניות פרטיות</div>
+    <div style="font-size:13px;line-height:1.8;color:#333;white-space:pre-wrap;text-align:right;direction:rtl;">מדיניות פרטיות – אפליקציית וועד בית פלוס
+
+תאריך עדכון אחרון: 21.6.2026
+
+אפליקציית וועד בית פלוס פותחה כדי לסייע לדיירים וחברי ועד בית לנהל את הבניין המשותף בצורה יעילה. אנו מכבדים את פרטיותך ומחויבים להגן עליה. מסמך זה מפרט כיצד אנו אוספים, משתמשים ושומרים את המידע שלך.
+
+1. איסוף מידע
+
+בעת השימוש באפליקציה, אנו עשויים לאסוף את סוגי המידע הבאים:
+
+• פרטי משתמש: שם מלא, מספר טלפון, וכתובת דוא"ל.
+• פרטי דירה: מספר דירה ומצב תשלומים (רלוונטי לוועד הבית בלבד).
+• מידע טכני: נתונים אודות השימוש באפליקציה (כגון גרסת מערכת ההפעלה, תקלות אפשריות).
+
+2. אופן השימוש במידע
+
+אנו עושים שימוש במידע שנאסף אך ורק למטרות הבאות:
+
+• ניהול תקין של תקשורת בין דיירי הבניין וועד הבית.
+• שליחת הודעות ועדכונים שוטפים מטעם ועד הבית.
+• תפעול תקין, שיפור ושדרוג חווית המשתמש באפליקציה.
+
+3. שיתוף מידע ופרטיות הדיירים
+
+אנו נוקטים בגישה של צמצום חשיפת מידע אישי (Privacy by Design):
+
+• שקיפות פנימית: רק השם המלא ומספר הטלפון יהיו חשופים לדיירים האחרים בבניין.
+• כתובת אימייל: תשמש את ועד הבית בלבד ולא תוצג לשאר הדיירים.
+• צד שלישי: אנו לא חולקים, מוכרים או מעבירים את המידע האישי לצדדים שלישיים, למעט במקרים הנדרשים על פי חוק.
+
+4. אבטחת מידע
+
+אנו מיישמים אמצעי אבטחה מתקדמים להגנה על המידע האישי מפני גישה בלתי מורשית. הגישה לנתונים רגישים מוגבלת למורשים בלבד.
+
+5. שמירת מידע ומחיקתו
+
+אנו נשמור את המידע כל עוד אתה משתמש רשום באפליקציה. במידה ועזבת את הבניין או שברצונך להסיר את פרטיך, פנה אל מנהל ועד הבית של הבניין שלך — הוא יבצע את המחיקה עבורך מהמערכת.
+
+6. שינויים במדיניות הפרטיות
+
+אנו עשויים לעדכן מדיניות זו מעת לעת. נודיע על כל שינוי מהותי באמצעות הודעה בתוך האפליקציה.
+
+7. יצירת קשר
+
+vaadplus@gmail.com</div>
+    <button class="btn-primary" style="margin-top:16px;width:100%;" onclick="closeModal('modal-privacy')">סגור</button>
+  </div>
+</div>
+
+<!-- Delete Building Modal -->
+<div class="modal-overlay" id="modal-delete-building">
+  <div class="modal">
+    <div class="modal-title" style="color:#d33;">⚠️ מחיקת בניין</div>
+    <div style="background:#fff5f5;border:2px solid #d33;border-radius:10px;padding:14px;margin-bottom:16px;">
+      <div style="font-weight:700;color:#d33;margin-bottom:8px;">אזהרה חמורה!</div>
+      <div style="font-size:14px;color:#333;line-height:1.8;">
+        פעולה זו תמחק לצמיתות:<br/>
+        🏢 את הבניין<br/>
+        👥 כל הדיירים<br/>
+        💰 כל התשלומים<br/>
+        📋 כל ההוצאות<br/>
+        🔧 כל התקלות
+      </div>
+      <div style="font-weight:700;color:#d33;margin-top:10px;">לא ניתן לשחזר!</div>
+    </div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="color:#d33;">הקלד "מחק" לאישור סופי:</label>
+      <input class="form-input" id="delete-building-input" placeholder="מחק" oninput="checkDeleteBuilding()"/>
+    </div>
+    <button class="btn-danger" id="btn-confirm-delete-building" style="width:100%;opacity:0.4;pointer-events:none;" onclick="confirmDeleteBuilding()">🗑️ מחק את הבניין לצמיתות</button>
+    <button class="btn-secondary" style="width:100%;margin-top:8px;" onclick="closeModal('modal-delete-building');document.getElementById('delete-building-input').value='';">ביטול</button>
+  </div>
+</div>
+
+<!-- Reset Data Modal -->
+<div class="modal-overlay" id="modal-reset-data">
+  <div class="modal">
+    <div class="modal-title" style="color:#d33;">⚠️ איפוס נתונים</div>
+    <div style="background:#fff5f5;border:2px solid #d33;border-radius:10px;padding:14px;margin-bottom:16px;">
+      <div style="font-weight:700;color:#d33;margin-bottom:8px;">פעולה זו תמחק לצמיתות:</div>
+      <div style="font-size:14px;color:#333;line-height:1.8;">
+        🏠 כל הדיירים<br/>
+        💰 כל התשלומים<br/>
+        📋 כל ההוצאות<br/>
+        🔧 כל התקלות<br/>
+        📢 כל ההודעות
+      </div>
+      <div style="font-weight:700;color:#d33;margin-top:10px;">לא ניתן לבטל פעולה זו!</div>
+    </div>
+    <div style="background:#fffbeb;border:1px solid #f59e0b;border-radius:8px;padding:10px;margin-bottom:16px;font-size:13px;">
+      💡 מומלץ מאוד לגבות לפני המחיקה
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button class="btn-primary" style="flex:1;" onclick="closeModal('modal-reset-data');exportData()">💾 גבה עכשיו</button>
+    </div>
+    <div class="form-group" style="margin-bottom:12px;">
+      <label class="form-label" style="color:#d33;">הקלד "מחק" לאישור סופי:</label>
+      <input class="form-input" id="reset-confirm-input" placeholder="מחק" oninput="checkResetConfirm()"/>
+    </div>
+    <button class="btn-danger" id="btn-confirm-reset" style="width:100%;opacity:0.4;pointer-events:none;" onclick="executeResetData()">🗑️ מחק את כל הנתונים</button>
+    <button class="btn-secondary" style="width:100%;margin-top:8px;" onclick="closeModal('modal-reset-data');document.getElementById('reset-confirm-input').value='';">ביטול</button>
+  </div>
+</div>
+
+<!-- כפתור איפוס נסתר - פינה שמאלית תחתונה -->
+
+
+<!-- FIREBASE -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, collection, doc, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp, Timestamp, runTransaction }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  
+const firebaseConfig = {
+  apiKey: "__FIREBASE_API_KEY__",
+  authDomain: "vaadplus-c0cc1.firebaseapp.com",
+  projectId: "vaadplus-c0cc1",
+  storageBucket: "vaadplus-c0cc1.firebasestorage.app",
+  messagingSenderId: "369349440346",
+  appId: "1:369349440346:web:4aa1d03e44f9ffa46b7963"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// ===== STATE =====
+let currentUser = null;
+let isAdmin = false;
+let buildingId = null;
+let currentResident = null;
+let buildingData = null;
+let allResidents = [];
+let allIssues = [];
+let allAnnouncements = [];
+let allPayments = [];
+let currentIssueFilter = 'all';
+let currentResView = 'table';
+let currentPayView = 'overview';
+
+// ===== HELPERS =====
+window.showToast = (msg) => {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+};
+
+function getGreeting() {
+  const h = new Date().getHours();
+  if (h < 12) return 'בוקר טוב,';
+  if (h < 17) return 'צהריים טובים,';
+  if (h < 21) return 'ערב טוב,';
+  return 'לילה טוב,';
+}
+
+function fmtCurrency(n) {
+  return '₪' + Number(n).toLocaleString('he-IL');
+}
+
+function monthLabel(ym) {
+  // ym = "2026-06"
+  const [y, m] = ym.split('-');
+  const months = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  return months[parseInt(m)-1] + ' ' + y;
+}
+
+function currentYM() {
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+
+function aptFee(aptNum, resident) {
+  if (resident?.customFee) return resident.customFee;
+  return buildingData?.monthlyFee || 200;
+}
+
+function normalizeAddress(address) {
+  return address
+    .trim()
+    .toLowerCase()
+    .replace(/רחוב|רח['\u05f3]?/g, '')   // remove "רחוב" / "רח'" prefix
+    .replace(/[.,\-\/]/g, ' ')        // punctuation -> space
+    .replace(/קרית/g, 'קריית')         // קרית -> קריית
+    .replace(/בית שמש/g, 'בית-שמש')   // נרמול מקפים
+    .replace(/תל אביב.*/g, 'תל אביב') // גרסאות של ת"א
+    .replace(/\s+/g, ' ')             // collapse whitespace
+    .trim();
+}
+
+// ===== AUTH =====
+window.signInWithGoogle = async () => {
+  try {
+    const provider = new GoogleAuthProvider();
+    await signInWithPopup(auth, provider);
+  } catch(e) {
+    const el = document.getElementById('auth-error');
+    el.textContent = 'שגיאה בכניסה: ' + e.message;
+    el.style.display = 'block';
+  }
+};
+
+window.logout = async () => {
+  await signOut(auth);
+};
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    document.getElementById('auth-screen').style.display = 'flex';
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'none';
+    currentUser = null; isAdmin = false; buildingId = null;
+    return;
+  }
+
+  // Super Admin check
+  const SUPER_ADMIN_EMAIL = 'vaadplus100@gmail.com';
+  if (user.email === SUPER_ADMIN_EMAIL) {
+    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('super-admin-screen').style.display = 'flex';
+    return;
+  }
+
+  // Find a building where this user is the admin
+  const q = query(collection(db, 'buildings'), where('adminEmail', '==', user.email));
+  const snap = await getDocs(q);
+
+  if (snap.empty) {
+    // לא מנהל — חפש כדייר רשום באחד הבניינים
+    try {
+      const allBuildings = await getDocs(collection(db, 'buildings'));
+      let foundBuilding = null, foundResident = null;
+      for (const bDoc of allBuildings.docs) {
+        try {
+          const resQ = query(
+            collection(db, 'buildings', bDoc.id, 'residents'),
+            where('email', '==', user.email)
+          );
+          const resSnap = await getDocs(resQ);
+          if (!resSnap.empty) {
+            foundBuilding = bDoc;
+            foundResident = resSnap.docs[0].data();
+            break;
+          }
+        } catch(e) { /* המשך לבניין הבא */ }
+      }
+
+      if (foundBuilding) {
+        buildingId = foundBuilding.id;
+        buildingData = foundBuilding.data();
+        currentUser = { uid: user.uid, name: foundResident.name || user.displayName || '', email: user.email, role: foundResident.role || 'tenant' };
+        currentResident = foundResident;
+        isAdmin = false;
+        document.getElementById('auth-screen').style.display = 'none';
+        document.getElementById('setup-screen').style.display = 'none';
+        document.getElementById('app').style.display = 'flex';
+        document.getElementById('app').style.flexDirection = 'column';
+        initUI();
+        loadAll();
+      } else {
+        // לא מנהל ולא דייר — מסך הקמת בניין חדש
+        document.getElementById('auth-screen').style.display = 'none';
+        document.getElementById('app').style.display = 'none';
+        document.getElementById('setup-screen').style.display = 'flex';
+        document.getElementById('setup-name').value = '';
+      }
+    } catch(e) {
+      // שגיאה כללית — הצג מסך הקמה כ-fallback
+      document.getElementById('auth-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'none';
+      document.getElementById('setup-screen').style.display = 'flex';
+      document.getElementById('setup-name').value = '';
+    }
+    return;
+  }
+
+  const buildingDoc = snap.docs[0];
+  buildingId = buildingDoc.id;
+  buildingData = buildingDoc.data();
+
+  currentUser = { uid: user.uid, name: buildingData.adminName || user.displayName || '', email: user.email, role: 'admin' };
+  isAdmin = true;
+
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('app').style.flexDirection = 'column';
+
+  initUI();
+  loadAll();
+});
+
+window.resetAllData = () => {
+  if (auth.currentUser?.email !== 'vaadplus100@gmail.com') {
+    showToast('פעולה זו מוגבלת ל-Super Admin בלבד');
+    return;
+  }
+  // תמיד מחייב גיבוי לפני מחיקה
+  if (!confirm(`⚠️ לפני מחיקת הבניין חובה לגבות!\n\nכתובת: ${buildingData?.address || ''}\n\nלחץ אישור כדי לגבות עכשיו, ואחר כך תוכל למחוק.`)) return;
+  exportData();
+  // אחרי הגיבוי — הצג את מודל המחיקה
+  setTimeout(() => {
+    document.getElementById('delete-building-input').value = '';
+    const btn = document.getElementById('btn-confirm-delete-building');
+    btn.style.opacity = '0.4';
+    btn.style.pointerEvents = 'none';
+    openModal('modal-delete-building');
+  }, 1500);
+};
+
+window.checkDeleteBuilding = () => {
+  const val = document.getElementById('delete-building-input').value;
+  const btn = document.getElementById('btn-confirm-delete-building');
+  if (val === 'מחק') {
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+  } else {
+    btn.style.opacity = '0.4';
+    btn.style.pointerEvents = 'none';
+  }
+};
+
+window.confirmDeleteBuilding = async () => {
+  closeModal('modal-delete-building');
+
+  try {
+    const user = auth.currentUser;
+    if (!user) { showToast('לא מחובר!'); return; }
+    if (!buildingId) { showToast('שגיאה: לא נמצא בניין'); return; }
+
+    showToast('מוחק...');
+
+    // מחק תת-אוספים של הבניין הנוכחי בלבד
+    const subs = ['residents','payments','expenses','issues','announcements','paymentLog','cashDeposits'];
+    for (const sub of subs) {
+      const subSnap = await getDocs(collection(db, 'buildings', buildingId, sub));
+      for (const d of subSnap.docs) await deleteDoc(d.ref);
+    }
+    // מחק כתובת
+    if (buildingData?.address) {
+      const addrKey = normalizeAddress(buildingData.address);
+      await deleteDoc(doc(db, 'buildingAddresses', addrKey));
+    }
+    // מחק את הבניין עצמו
+    await deleteDoc(doc(db, 'buildings', buildingId));
+
+    showToast('✅ הבניין נמחק');
+    setTimeout(() => location.reload(), 1500);
+  } catch(e) {
+    showToast('שגיאה: ' + e.message);
+  }
+};
+
+// ===== SUPER ADMIN =====
+const SUPER_ADMIN_EMAIL = 'vaadplus100@gmail.com';
+const MY_BUILDING_ADDRESS = 'הערמונים 1, קריית ים';
+
+window.showSuperAdminScreen = () => {
+  document.getElementById('supervisor-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('super-admin-screen').style.display = 'flex';
+};
+
+window.enterAsAdmin = async () => {
+  const user = auth.currentUser;
+  document.getElementById('super-admin-screen').style.display = 'none';
+  const q = query(collection(db, 'buildings'), where('adminEmail', '==', user.email));
+  const snap = await getDocs(q);
+  if (snap.empty) {
+    document.getElementById('setup-screen').style.display = 'flex';
+    return;
+  }
+  const buildingDoc = snap.docs[0];
+  buildingId = buildingDoc.id;
+  buildingData = buildingDoc.data();
+  currentUser = { uid: user.uid, name: buildingData.adminName || user.displayName || '', email: user.email, role: 'admin' };
+  isAdmin = true;
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('app').style.flexDirection = 'column';
+  initUI();
+  loadAll();
+};
+
+window.enterSupervisorMode = async () => {
+  document.getElementById('super-admin-screen').style.display = 'none';
+  document.getElementById('supervisor-screen').style.display = 'flex';
+  const snap = await getDocs(collection(db, 'buildings'));
+  const list = document.getElementById('supervisor-buildings-list');
+  list.innerHTML = snap.docs.map(d => {
+    const data = d.data();
+    return `<div class="card" style="margin-bottom:10px;cursor:pointer;" onclick="enterBuildingAsViewer('${d.id}')">
+      <div style="font-weight:700;font-size:16px;text-align:right;">${data.address || 'בניין ללא כתובת'}</div>
+      <div style="font-size:13px;color:var(--gray-500);text-align:right;margin-top:4px;">מנהל: ${data.adminName || ''} • ${data.adminEmail || ''}</div>
+    </div>`;
+  }).join('') || '<div style="text-align:center;color:var(--gray-400);">אין בניינים</div>';
+};
+
+window.enterBuildingAsViewer = async (bId) => {
+  const bDoc = await getDoc(doc(db, 'buildings', bId));
+  buildingId = bId;
+  buildingData = bDoc.data();
+  currentUser = { uid: auth.currentUser.uid, name: '👑 פיקוח', email: auth.currentUser.email, role: 'admin' };
+  isAdmin = true;
+  document.getElementById('supervisor-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('app').style.flexDirection = 'column';
+  initUI();
+  loadAll();
+};
+
+window.executeRestoreBuilding = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  event.target.value = '';
+
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    const info = data.__buildingInfo;
+
+    if (!info || !info.adminEmail) {
+      showToast('❌ קובץ גיבוי לא תקין — חסרים פרטי בניין');
+      return;
+    }
+
+    if (!confirm(`שחזור בניין:\n${info.address}\nמנהל: ${info.adminName} (${info.adminEmail})\n\nלהמשיך?`)) return;
+
+    closeModal('modal-restore-building');
+    showToast('יוצר בניין...');
+
+    // 1. בדוק אם הכתובת כבר תפוסה
+    const addrKey = normalizeAddress(info.address);
+    const addrRef = doc(db, 'buildingAddresses', addrKey);
+    const addrSnap = await getDoc(addrRef);
+    if (addrSnap.exists()) {
+      showToast('❌ כתובת זו כבר קיימת במערכת');
+      return;
+    }
+
+    // 2. צור בניין חדש עם אותם פרטים
+    const newBuildingRef = doc(collection(db, 'buildings'));
+    await runTransaction(db, async (tx) => {
+      tx.set(newBuildingRef, {
+        address: info.address,
+        adminName: info.adminName,
+        adminEmail: info.adminEmail,
+        adminUid: info.adminUid,
+        monthlyFee: info.monthlyFee || 200,
+        openingBalance: info.openingBalance || 0,
+        createdAt: serverTimestamp()
+      });
+      tx.set(addrRef, { buildingId: newBuildingRef.id, createdAt: serverTimestamp() });
+    });
+
+    const newBuildingId = newBuildingRef.id;
+
+    // 3. ייבא את כל הנתונים לבניין החדש
+    const collections = ['residents','payments','expenses','issues','announcements','cashDeposits'];
+    let imported = 0;
+    for (const colName of collections) {
+      const items = data[colName];
+      if (!Array.isArray(items)) continue;
+      for (const item of items) {
+        const { id, ...fields } = item;
+        for (const k in fields) {
+          if (fields[k] && typeof fields[k] === 'object' && fields[k].__timestamp__) {
+            fields[k] = Timestamp.fromDate(new Date(fields[k].__timestamp__));
+          }
+        }
+        if (id) {
+          await setDoc(doc(db, 'buildings', newBuildingId, colName, id), fields, { merge: true });
+        } else {
+          await addDoc(collection(db, 'buildings', newBuildingId, colName), fields);
+        }
+        imported++;
+      }
+    }
+
+    showToast(`✅ הבניין שוחזר! ${imported} רשומות`);
+    // רענן רשימת בניינים
+    setTimeout(() => enterSupervisorMode(), 1500);
+
+  } catch(e) {
+    showToast('שגיאה בשחזור: ' + e.message);
+  }
+};
+
+window.showSetupAsNewAdmin = () => {
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('setup-screen').style.display = 'flex';
+  document.getElementById('setup-name').value = '';
+};
+
+window.completeSetup = async () => {
+  const user = auth.currentUser;
+  if (!user) return;
+  if (!document.getElementById('privacy-consent').checked) {
+    showToast('יש לאשר את מדיניות הפרטיות כדי להמשיך');
+    return;
+  }
+  const name = document.getElementById('setup-name').value.trim();
+  const address = document.getElementById('setup-address').value.trim();
+  const feeVal = parseFloat(document.getElementById('setup-fee').value) || 200;
+  if (!name || !address) { showToast('חובה למלא שם ועד וכתובת בניין'); return; }
+  // וולידציה: פורמט "רחוב מספר, עיר"
+  const addressPattern = /^.+\s+\d+,\s*.+$/;
+  if (!addressPattern.test(address)) {
+    showToast('פורמט כתובת שגוי — נדרש: רחוב מספר, עיר (לדוגמה: דיזינגוף 99, תל אביב-יפו)');
+    return;
+  }
+
+  const addressKey = normalizeAddress(address);
+  const addressRef = doc(db, 'buildingAddresses', addressKey);
+  const newBuildingRef = doc(collection(db, 'buildings'));
+
+  try {
+    await runTransaction(db, async (tx) => {
+      const addressSnap = await tx.get(addressRef);
+      if (addressSnap.exists()) {
+        throw new Error('כתובת זו כבר רשומה במערכת על ידי ועד אחר. אם זה הבניין שלך, פנה לוועד הקיים.');
+      }
+      tx.set(newBuildingRef, {
+        address,
+        adminEmail: user.email,
+        adminUid: user.uid,
+        adminName: name,
+        monthlyFee: feeVal,
+        createdAt: serverTimestamp()
+      });
+      tx.set(addressRef, {
+        buildingId: newBuildingRef.id,
+        createdAt: serverTimestamp()
+      });
+    });
+
+    buildingId = newBuildingRef.id;
+    buildingData = { address, adminName: name, adminEmail: user.email, monthlyFee: feeVal };
+    currentUser = { uid: user.uid, name, email: user.email, role: 'admin' };
+    isAdmin = true;
+
+    document.getElementById('setup-screen').style.display = 'none';
+    document.getElementById('app').style.display = 'flex';
+    document.getElementById('app').style.flexDirection = 'column';
+
+    initUI();
+    loadAll();
+  } catch(e) {
+    showToast('שגיאה: ' + e.message);
+  }
+};
+
+function showError(msg) {
+  const el = document.getElementById('auth-error');
+  el.textContent = msg;
+  el.style.display = 'block';
+}
+
+// ===== INIT UI =====
+function initUI() {
+  const firstName = (currentUser.name || '').split(' ')[0];
+  document.getElementById('home-greeting').textContent = getGreeting();
+  document.getElementById('home-name').textContent = firstName || currentUser.name;
+  document.getElementById('home-address').textContent = buildingData?.address || '';
+
+  // Admin controls
+  // כתר ל-Super Admin בלבד
+  const buildingIcon = document.getElementById('home-building-icon');
+  if (buildingIcon) {
+    if (auth.currentUser?.email === 'vaadplus100@gmail.com') {
+      buildingIcon.innerHTML = '👑';
+      buildingIcon.style.cursor = 'pointer';
+      buildingIcon.onclick = () => resetAllData();
+    } else {
+      buildingIcon.innerHTML = '🏢';
+      buildingIcon.style.cursor = 'default';
+      buildingIcon.onclick = null;
+    }
+  }
+
+  if (isAdmin) {
+    document.getElementById('btn-add-resident').style.display = '';
+    document.getElementById('btn-admin-finance').style.display = '';
+    document.getElementById('btn-add-announce').style.display = '';
+    document.getElementById('fab-issue').classList.add('visible');
+    document.getElementById('residents-admin-badge').style.display = '';
+    document.getElementById('issues-admin-badge').style.display = '';
+    document.getElementById('th-actions').style.display = '';
+    // backup-section הועבר לתפריט מנהל
+  } else {
+    // new-building-section הועבר לתפריט מנהל
+  }
+
+  // Month selector
+  const sel = document.getElementById('payment-month-select');
+  sel.innerHTML = '';
+  const now = new Date();
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const ym = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    const opt = document.createElement('option');
+    opt.value = ym;
+    opt.textContent = monthLabel(ym);
+    sel.appendChild(opt);
+  }
+}
+
+// ===== NAVIGATION =====
+window.navigate = (screen, pushState = true) => {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('screen-' + screen).classList.add('active');
+  document.getElementById('nav-' + screen)?.classList.add('active');
+  if (screen === 'payments') loadPayments();
+  if (pushState) history.pushState({ screen }, '', '');
+};
+
+window.addEventListener('popstate', (e) => {
+  const openModal = document.querySelector('.modal-overlay.open');
+  if (openModal) {
+    openModal.classList.remove('open');
+    history.pushState({ screen: e.state?.screen || 'home' }, '', '');
+    return;
+  }
+  const screen = e.state?.screen || 'home';
+  navigate(screen, false);
+});
+
+// ===== LOAD ALL =====
+function loadAll() {
+  navigate('home');
+  loadResidents();
+  loadIssues();
+  loadAnnouncements();
+  loadPayments();
+}
+
+// ===== RESIDENTS =====
+function loadResidents() {
+  onSnapshot(collection(db, 'buildings', buildingId, 'residents'), (snap) => {
+    allResidents = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    allResidents.sort((a,b) => (parseInt(a.apt)||0) - (parseInt(b.apt)||0));
+    renderResidents(allResidents);
+    updateHomeStats();
+  });
+}
+
+function renderResidents(list) {
+  // Stats
+  document.getElementById('res-count-total').textContent = list.length;
+  document.getElementById('res-count-admins').textContent = list.filter(r => r.role==='admin').length;
+  document.getElementById('res-count-tenants').textContent = list.filter(r => r.role!=='admin').length;
+
+  // Table
+  const tbody = document.getElementById('residents-tbody');
+  tbody.innerHTML = list.map(r => `
+    <tr>
+      <td><strong>${r.apt || '-'}</strong></td>
+      <td>${r.name || '-'}</td>
+      <td>${r.floor !== undefined ? r.floor : '-'}</td>
+      <td>${r.phone ? `<a href="tel:${r.phone}" style="color:var(--blue);text-decoration:none">${r.phone}</a>` : '-'}</td>
+      <td>${r.role === 'admin' ? '<span class="badge badge-orange">ועד</span>' : '<span class="badge badge-gray">דייר</span>'}</td>
+      ${isAdmin ? `<td><button class="btn-icon" style="padding:5px 10px;font-size:12px;" onclick="editResident('${r.id}')">✏️</button></td>` : '<td></td>'}
+    </tr>
+  `).join('');
+
+  // Cards
+  const cards = document.getElementById('residents-cards-view');
+  cards.innerHTML = list.map(r => `
+    <div class="card" style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div>
+          <div style="font-size:16px;font-weight:700;">${r.name || '-'}</div>
+          <div style="font-size:13px;color:var(--gray-400);margin-top:4px;">
+            דירה ${r.apt || '-'} • קומה ${r.floor !== undefined ? r.floor : '-'}
+          </div>
+          ${r.phone ? `<div style="font-size:13px;margin-top:4px;"><a href="tel:${r.phone}" style="color:var(--blue)">${r.phone}</a></div>` : ''}
+          ${r.email ? `<div style="font-size:12px;color:var(--gray-400);margin-top:2px;">${r.email}</div>` : ''}
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+          ${r.role === 'admin' ? '<span class="badge badge-orange">ועד</span>' : '<span class="badge badge-gray">דייר</span>'}
+          <span class="badge badge-blue">${fmtCurrency(aptFee(r.apt, r))}</span>
+          ${isAdmin ? `<button class="btn-icon" style="padding:5px 10px;font-size:12px;" onclick="editResident('${r.id}')">✏️ ערוך</button>` : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+window.filterResidents = (q) => {
+  const s = q.toLowerCase();
+  const filtered = allResidents.filter(r =>
+    (r.name||'').toLowerCase().includes(s) ||
+    String(r.apt||'').includes(s) ||
+    (r.phone||'').includes(s) ||
+    (r.email||'').toLowerCase().includes(s)
+  );
+  renderResidents(filtered);
+};
+
+window.setResView = (view, btn) => {
+  currentResView = view;
+  document.querySelectorAll('.tabs-row .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('residents-table-view').style.display = view === 'table' ? '' : 'none';
+  document.getElementById('residents-cards-view').style.display = view === 'cards' ? '' : 'none';
+};
+
+window.openAddResident = () => {
+  document.getElementById('btn-delete-resident').style.display = 'none';
+  document.getElementById('modal-resident-title').textContent = 'הוסף דייר';
+  document.getElementById('edit-resident-id').value = '';
+  document.getElementById('r-apt').value = '';
+  document.getElementById('r-floor').value = '';
+  document.getElementById('r-name').value = '';
+  document.getElementById('r-phone').value = '';
+  document.getElementById('r-email').value = '';
+  document.getElementById('r-role').value = 'tenant';
+  document.getElementById('r-payment-method').value = 'transfer';
+  document.getElementById('r-fee').value = '';
+  openModal('modal-resident');
+};
+
+window.editResident = (id) => {
+  if (!isAdmin) { showToast('אין הרשאה'); return; }
+
+  document.getElementById('btn-delete-resident').style.display = '';
+  const r = allResidents.find(x => x.id === id);
+  if (!r) return;
+  document.getElementById('modal-resident-title').textContent = 'ערוך דייר';
+  document.getElementById('edit-resident-id').value = id;
+  document.getElementById('r-apt').value = r.apt || '';
+  document.getElementById('r-floor').value = r.floor !== undefined ? r.floor : '';
+  document.getElementById('r-name').value = r.name || '';
+  document.getElementById('r-phone').value = r.phone || '';
+  document.getElementById('r-email').value = r.email || '';
+  document.getElementById('r-role').value = r.role || 'tenant';
+  document.getElementById('r-payment-method').value = r.paymentMethod || 'transfer';
+  document.getElementById('r-fee').value = r.customFee || aptFee(r.apt, r);
+  openModal('modal-resident');
+};
+
+window.deleteResident = async () => {
+  if (!isAdmin) { showToast('אין הרשאה'); return; }
+
+  const id = document.getElementById('edit-resident-id').value;
+  if (!id) return;
+  if (!confirm('למחוק את הדייר? פעולה זו אינה הפיכה.')) return;
+  try {
+    await deleteDoc(doc(db, 'buildings', buildingId, 'residents', id));
+    showToast('🗑️ הדייר נמחק');
+    closeModal('modal-resident');
+  } catch(e) { showToast('שגיאה: ' + e.message); }
+};
+
+window.openCashDeposit = () => {
+  document.getElementById('deposit-amount').value = '';
+  document.getElementById('deposit-date').value = new Date().toISOString().split('T')[0];
+  document.getElementById('deposit-note').value = '';
+  openModal('modal-cash-deposit');
+};
+
+window.saveCashDeposit = async () => {
+  if (!isAdmin) { showToast('אין הרשאה'); return; }
+  const amount = parseFloat(document.getElementById('deposit-amount').value);
+  const date = document.getElementById('deposit-date').value;
+  const note = document.getElementById('deposit-note').value.trim();
+  if (!amount || !date) { showToast('חובה למלא סכום ותאריך'); return; }
+  try {
+    await addDoc(collection(db, 'buildings', buildingId, 'cashDeposits'), {
+      amount, date, note,
+      createdAt: serverTimestamp(), createdBy: currentUser.uid
+    });
+    showToast('✅ הפקדה נשמרה');
+    closeModal('modal-cash-deposit');
+    loadBalance();
+  } catch(e) { showToast('שגיאה: ' + e.message); }
+};
+
+window.openResetData = () => {
+  document.getElementById('reset-confirm-input').value = '';
+  const btn = document.getElementById('btn-confirm-reset');
+  btn.style.opacity = '0.4';
+  btn.style.pointerEvents = 'none';
+  openModal('modal-reset-data');
+};
+
+window.checkResetConfirm = () => {
+  const val = document.getElementById('reset-confirm-input').value;
+  const btn = document.getElementById('btn-confirm-reset');
+  if (val === 'מחק') {
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+  } else {
+    btn.style.opacity = '0.4';
+    btn.style.pointerEvents = 'none';
+  }
+};
+
+window.executeResetData = async () => {
+  if (!isAdmin) { showToast('אין הרשאה'); return; }
+  closeModal('modal-reset-data');
+  showToast('מוחק נתונים...');
+  try {
+    const collections = ['residents','payments','expenses','issues','announcements'];
+    for (const colName of collections) {
+      const snap = await getDocs(collection(db, 'buildings', buildingId, colName));
+      for (const d of snap.docs) await deleteDoc(d.ref);
+    }
+    showToast('✅ כל הנתונים נמחקו');
+    loadAll();
+  } catch(e) {
+    showToast('שגיאה: ' + e.message);
+  }
+};
+
+window.exportData = async () => {
+  try {
+    showToast('מייצא נתונים...');
+    const collections = ['residents','payments','expenses','issues','announcements'];
+    const data = {};
+    for (const colName of collections) {
+      const snap = await getDocs(collection(db, 'buildings', buildingId, colName));
+      data[colName] = snap.docs.map(d => {
+        const obj = d.data();
+        for (const k in obj) {
+          if (obj[k] && typeof obj[k].toDate === 'function') {
+            obj[k] = { __timestamp__: obj[k].toDate().toISOString() };
+          }
+        }
+        return { id: d.id, ...obj };
+      });
+    }
+    data.__exportedAt = new Date().toISOString();
+    data.__buildingId = buildingId;
+    data.__buildingAddress = buildingData?.address || '';
+    data.__buildingInfo = {
+      address: buildingData?.address || '',
+      adminName: buildingData?.adminName || '',
+      adminEmail: buildingData?.adminEmail || '',
+      adminUid: buildingData?.adminUid || '',
+      monthlyFee: buildingData?.monthlyFee || 200,
+      openingBalance: buildingData?.openingBalance || 0,
+    };
+    // סמן שגיבוי בוצע
+    sessionStorage.setItem('lastBackup_' + buildingId, new Date().toISOString());
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const dateStr = new Date().toISOString().slice(0,10);
+    const addrStr = (buildingData?.address || '').replace(/,\s*/g, '_').replace(/\s+/g, '_');
+    a.href = url;
+    a.download = `vaad-backup-${addrStr}-${dateStr}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('✅ הגיבוי הורד בהצלחה');
+  } catch (e) {
+    showToast('שגיאה בייצוא: ' + e.message);
+  }
+};
+
+window.importData = async (event) => {
+  const file = event.target.files[0];
+  if (!file) return;
+  event.target.value = '';
+
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    const collections = ['residents','payments','expenses','issues','announcements'];
+    let totalDocs = 0;
+    for (const colName of collections) {
+      if (Array.isArray(data[colName])) totalDocs += data[colName].length;
+    }
+    if (totalDocs === 0) { showToast('לא נמצאו נתונים תקינים בקובץ'); return; }
+
+    // בדיקת התאמת בניין — חסימה מוחלטת
+    if (data.__buildingId && data.__buildingId !== buildingId) {
+      const srcAddress = data.__buildingAddress || data.__buildingId;
+      showToast(`❌ שגיאה: הגיבוי שייך לבניין אחר (${srcAddress})`);
+      return;
+    }
+
+    if (!confirm(`הקובץ מכיל ${totalDocs} רשומות.\nהשחזור יוסיף/יעדכן רשומות לפי ה-ID שלהן (לא ימחק נתונים קיימים).\nלהמשיך?`)) return;
+
+    showToast('מייבא נתונים...');
+    let imported = 0;
+    for (const colName of collections) {
+      const items = data[colName];
+      if (!Array.isArray(items)) continue;
+      for (const item of items) {
+        const { id, ...fields } = item;
+        for (const k in fields) {
+          if (fields[k] && typeof fields[k] === 'object' && fields[k].__timestamp__) {
+            fields[k] = Timestamp.fromDate(new Date(fields[k].__timestamp__));
+          }
+        }
+        if (id) {
+          await setDoc(doc(db, 'buildings', buildingId, colName, id), fields, { merge: true });
+        } else {
+          await addDoc(collection(db, 'buildings', buildingId, colName), fields);
+        }
+        imported++;
+      }
+    }
+    showToast(`✅ יובאו ${imported} רשומות בהצלחה`);
+  } catch (e) {
+    showToast('שגיאה בייבוא: ' + e.message);
+  }
+};
+
+window.saveResident = async () => {
+  if (!isAdmin) { showToast('אין הרשאה'); return; }
+
+  const id = document.getElementById('edit-resident-id').value;
+  const apt = document.getElementById('r-apt').value.trim();
+  const name = document.getElementById('r-name').value.trim();
+  if (!apt || !name) { showToast('חובה למלא דירה ושם'); return; }
+
+  const feeInput = parseFloat(document.getElementById('r-fee').value);
+  const defaultFee = buildingData?.monthlyFee || 200;
+
+  const data = {
+    apt: parseInt(apt),
+    floor: parseInt(document.getElementById('r-floor').value) || 0,
+    name,
+    phone: document.getElementById('r-phone').value.trim(),
+    email: document.getElementById('r-email').value.trim(),
+    role: document.getElementById('r-role').value,
+    paymentMethod: document.getElementById('r-payment-method').value,
+    updatedAt: serverTimestamp()
+  };
+
+  // שמור customFee רק אם שונה מברירת המחדל
+  if (feeInput && feeInput !== defaultFee) {
+    data.customFee = feeInput;
+  } else {
+    data.customFee = null;
+  }
+
+  try {
+    if (id) {
+      await updateDoc(doc(db, 'buildings', buildingId, 'residents', id), data);
+      showToast('✅ הדייר עודכן');
+    } else {
+      data.createdAt = serverTimestamp();
+      await addDoc(collection(db, 'buildings', buildingId, 'residents'), data);
+      showToast('✅ הדייר נוסף');
+    }
+    closeModal('modal-resident');
+  } catch(e) { showToast('שגיאה: ' + e.message); }
+};
+
+// ===== PAYMENTS =====
+window.loadPayments = async () => {
+  const ym = document.getElementById('payment-month-select').value;
+  const snap = await getDocs(query(collection(db, 'buildings', buildingId, 'payments'), where('month','==',ym)));
+  allPayments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  renderPayments(ym);
+};
+
+function renderPayments(ym) {
+  const paidMap = {};
+  allPayments.forEach(p => { paidMap[p.apt] = p; });
+
+  let totalPaid = 0, totalExpected = 0, paidCount = 0;
+  const pendingItems = [], paidItems = [];
+
+  const residentsToShow = allResidents;
+  residentsToShow.forEach(r => {
+    const fee = aptFee(r.apt, r);
+    totalExpected += fee;
+    const payment = paidMap[r.apt];
+    if (payment) {
+      totalPaid += payment.amount || fee;
+      paidCount++;
+      paidItems.push({ resident: r, payment });
+    } else {
+      pendingItems.push({ resident: r });
+    }
+  });
+
+  const pct = totalExpected > 0 ? Math.round(totalPaid / totalExpected * 100) : 0;
+
+  document.getElementById('pay-total-paid').textContent = fmtCurrency(totalPaid);
+  document.getElementById('pay-total-expected').textContent = fmtCurrency(totalExpected);
+  document.getElementById('pay-pct').textContent = pct + '%';
+  document.getElementById('pay-total-pending').textContent = fmtCurrency(totalExpected - totalPaid);
+  document.getElementById('pay-progress-bar').style.width = pct + '%';
+  document.getElementById('pay-progress-label').textContent = `${paidCount} מתוך ${allResidents.length} דירות שילמו`;
+
+  // Also update home stats
+  document.getElementById('stat-paid').textContent = fmtCurrency(totalPaid);
+  document.getElementById('stat-pending').textContent = fmtCurrency(totalExpected - totalPaid);
+
+  // Pending section
+  const ps = document.getElementById('pay-pending-section');
+  ps.querySelector('div').textContent = `⏳ ממתינים (${pendingItems.length})`;
+  document.getElementById('pay-pending-list').innerHTML = pendingItems.map(({ resident: r }) => `
+    <div class="payment-item" onclick="showResidentHistory(${r.apt},'${r.name}',${aptFee(r.apt, r)})" style="cursor:pointer;">
+      <div class="payment-item-info">
+        <div class="payment-item-name">${r.name}</div>
+        <div class="payment-item-sub">דירה ${r.apt} • קומה ${r.floor !== undefined ? r.floor : '-'}</div>
+      </div>
+      <div class="payment-item-amount orange">${fmtCurrency(aptFee(r.apt, r))}</div>
+      ${isAdmin ? `<button class="btn-success" style="margin-right:8px;" onclick="event.stopPropagation();markPaid('${r.apt}','${r.name}',${aptFee(r.apt, r)})">✓ שולם</button>` : ''}
+    </div>
+  `).join('') || '<div class="card-empty">🎉 כולם שילמו!</div>';
+
+  // Paid section
+  const paid_s = document.getElementById('pay-paid-section');
+  paid_s.querySelector('div').textContent = `✅ שילמו (${paidItems.length})`;
+  document.getElementById('pay-paid-list').innerHTML = paidItems.map(({ resident: r, payment: p }) => `
+    <div class="payment-item" onclick="showResidentHistory(${r.apt},'${r.name}',${aptFee(r.apt, r)})" style="cursor:pointer;">
+      <div class="payment-item-info">
+        <div class="payment-item-name">${r.name}</div>
+        <div class="payment-item-sub">דירה ${r.apt} • ${p.paidAt ? new Date(p.paidAt.toDate()).toLocaleDateString('he-IL') : ''}</div>
+      </div>
+      <div class="payment-item-amount" style="color:var(--green)">${fmtCurrency(p.amount || aptFee(r.apt, r))}</div>
+      ${isAdmin ? `<button class="btn-danger" style="margin-right:8px;" onclick="event.stopPropagation();cancelPayment('${p.id}')">ביטול</button>` : ''}
+    </div>
+  `).join('');
+
+  // Full list view
+  const fullList = [...paidItems.map(x => ({...x, paid: true})), ...pendingItems.map(x => ({...x, paid: false}))];
+  fullList.sort((a,b) => (parseInt(a.resident.apt)||0) - (parseInt(b.resident.apt)||0));
+  document.getElementById('pay-full-list').innerHTML = `
+    <div style="overflow-x:auto;">
+      <table class="po-table">
+        <thead><tr>
+          <th>דירה</th><th>שם</th><th>קומה</th><th>סכום</th><th>סטטוס</th>
+          ${isAdmin ? '<th>פעולה</th>' : ''}
+        </tr></thead>
+        <tbody>
+          ${fullList.map(({ resident: r, payment: p, paid }) => `
+            <tr>
+              <td><strong>${r.apt}</strong></td>
+              <td>${r.name}</td>
+              <td>${r.floor !== undefined ? r.floor : '-'}</td>
+              <td>${fmtCurrency(aptFee(r.apt, r))}</td>
+              <td>${paid ? '<span class="badge badge-green">שולם</span>' : '<span class="badge badge-orange">ממתין</span>'}</td>
+              ${isAdmin ? `<td>${paid
+                ? `<button class="btn-danger" style="padding:4px 8px;font-size:11px;" onclick="cancelPayment('${p.id}')">ביטול</button>`
+                : `<button class="btn-success" style="padding:4px 8px;font-size:11px;" onclick="markPaid('${r.apt}','${r.name}',${aptFee(r.apt, r)})">שולם</button>`
+              }</td>` : ''}
+            </tr>
+          `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+window.setPayView = (view, btn) => {
+  currentPayView = view;
+  document.querySelectorAll('#screen-payments .tab-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('pay-view-overview').style.display = view === 'overview' ? '' : 'none';
+  document.getElementById('pay-view-list').style.display = view === 'list' ? '' : 'none';
+  document.getElementById('pay-view-expenses').style.display = view === 'expenses' ? '' : 'none';
+  document.getElementById('pay-view-balance').style.display = view === 'balance' ? '' : 'none';
+  if (view === 'expenses') loadExpenses();
+  if (view === 'balance') loadBalance();
+};
+
+window.markPaid = async (apt, name, amount) => {
+  const ym = document.getElementById('payment-month-select').value;
+  const resident = allResidents.find(r => r.apt === parseInt(apt));
+  const method = resident?.paymentMethod || 'transfer';
+  try {
+    await addDoc(collection(db, 'buildings', buildingId, 'payments'), {
+      apt: parseInt(apt), name, amount, month: ym, method,
+      paidAt: serverTimestamp(), recordedBy: currentUser.uid
+    });
+    try {
+      await addDoc(collection(db, 'buildings', buildingId, 'paymentLog'), {
+        apt: parseInt(apt), name, amount, month: ym, method, action: 'paid',
+        at: serverTimestamp(), by: currentUser.uid, byName: currentUser.name || currentUser.email
+      });
+    } catch(logErr) {
+      console.warn('paymentLog write failed:', logErr);
+    }
+    showToast(`✅ ${name} - תשלום נרשם`);
+    loadPayments();
+  } catch(e) { showToast('שגיאה: ' + e.message); }
+};
+
+window.cancelPayment = async (id) => {
+  if (!confirm('לבטל את התשלום?')) return;
+  try {
+    const snap = await getDoc(doc(db, 'buildings', buildingId, 'payments', id));
+    const p = snap.exists() ? snap.data() : {};
+    await deleteDoc(doc(db, 'buildings', buildingId, 'payments', id));
+    try {
+      await addDoc(collection(db, 'buildings', buildingId, 'paymentLog'), {
+        apt: p.apt, name: p.name, amount: p.amount, month: p.month, action: 'cancelled',
+        at: serverTimestamp(), by: currentUser.uid, byName: currentUser.name || currentUser.email
+      });
+    } catch(logErr) {
+      console.warn('paymentLog write failed:', logErr);
+    }
+    showToast('תשלום בוטל');
+    loadPayments();
+  } catch(e) { showToast('שגיאה: ' + e.message); }
+};
+
+window.saveOpeningBalance = async () => {
+  if (!isAdmin) { showToast('אין הרשאה'); return; }
+  const val = parseFloat(document.getElementById('input-opening-balance').value) || 0;
+  await updateDoc(doc(db, 'buildings', buildingId), { openingBalance: val });
+  buildingData.openingBalance = val;
+  showToast('✅ יתרת פתיחה נשמרה');
+  loadBalance();
+};
+
+window.openAdminFinance = () => {
+  const fee = buildingData?.monthlyFee || '';
+  document.getElementById('input-monthly-fee').value = fee;
+  document.getElementById('monthly-fee-note').textContent = fee ? `נוכחי: ${fmtCurrency(fee)} לחודש` : 'לא הוגדר עדיין';
+  document.getElementById('input-opening-balance').value = buildingData?.openingBalance || '';
+  document.getElementById('modal-admin-finance').classList.add('open');
+};
+
+window.closeAdminFinance = () => {
+  document.getElementById('modal-admin-finance').classList.remove('open');
+};
+
+window.saveMonthlyFee = async () => {
+  if (!isAdmin) { showToast('אין הרשאה'); return; }
+
+  const val = parseFloat(document.getElementById('input-monthly-fee').value);
+  if (!val || val <= 0) { showToast('הכנס סכום תקין'); return; }
+  try {
+    await updateDoc(doc(db, 'buildings', buildingId), { monthlyFee: val });
+    buildingData.monthlyFee = val;
+    document.getElementById('monthly-fee-note').textContent = `נשמר: ${fmtCurrency(val)} לחודש`;
+    showToast('דמי הועד עודכנו!');
+    loadPayments();
+  } catch(e) {
+    showToast('שגיאה: ' + e.message);
+  }
+};
+
+window.openAddPayment = () => {
+  // Fill resident dropdown
+  const sel = document.getElementById('p-apt');
+  sel.innerHTML = allResidents.map(r => `<option value="${r.apt}">${r.apt} - ${r.name}</option>`).join('');
+
+  // Fill month dropdown
+  const msel = document.getElementById('p-month');
+  msel.innerHTML = '';
+  const now = new Date();
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    const ym = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+    const opt = document.createElement('option');
+    opt.value = ym;
+    opt.textContent = monthLabel(ym);
+    msel.appendChild(opt);
+  }
+  document.getElementById('p-amount').value = '';
+  document.getElementById('p-note').value = '';
+  // מלא אופן תשלום לפי הגדרת הדייר הראשון
+  const firstResident = allResidents.find(r => r.apt === parseInt(sel.value));
+  document.getElementById('p-method').value = firstResident?.paymentMethod || 'transfer';
+  // עדכן אופן תשלום כשמשנים דייר
+  sel.onchange = () => {
+    const r = allResidents.find(x => x.apt === parseInt(sel.value));
+    document.getElementById('p-method').value = r?.paymentMethod || 'transfer';
+  };
+  openModal('modal-payment');
+};
+
+window.savePayment = async () => {
+  const apt = parseInt(document.getElementById('p-apt').value);
+  const month = document.getElementById('p-month').value;
+  const amount = parseInt(document.getElementById('p-amount').value);
+  const note = document.getElementById('p-note').value.trim();
+  if (!apt || !month || !amount) { showToast('חובה למלא כל השדות'); return; }
+  const resident = allResidents.find(r => r.apt === apt);
+  try {
+    const method = document.getElementById('p-method').value;
+    await addDoc(collection(db, 'buildings', buildingId, 'payments'), {
+      apt, name: resident?.name || '', amount, month, note,
+      method, paidAt: serverTimestamp(), recordedBy: currentUser.uid
+    });
+    try {
+      await addDoc(collection(db, 'buildings', buildingId, 'paymentLog'), {
+        apt: parseInt(apt), name: resident?.name || '', amount, month, action: 'paid',
+        at: serverTimestamp(), by: currentUser.uid, byName: currentUser.name || currentUser.email
+      });
+    } catch(logErr) {
+      console.warn('paymentLog write failed:', logErr);
+    }
+    showToast('✅ תשלום נרשם');
+    closeModal('modal-payment');
+    loadPayments();
+  } catch(e) { showToast('שגיאה: ' + e.message); }
+};
+
+// ===== EXPENSES =====
+let allExpenses = [];
+
+function loadExpenses() {
+  const container = document.getElementById('expenses-list');
+  container.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
+  getDocs(query(collection(db, 'buildings', buildingId, 'expenses'), orderBy('date','desc'))).then(snap => {
+    allExpenses = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderExpenses();
+  });
+}
+
+function renderExpenses() {
+  const container = document.getElementById('expenses-list');
+  if (!allExpenses.length) {
+    container.innerHTML = '<div class="card-empty" style="margin:16px;">אין הוצאות רשומות</div>';
+    return;
+  }
+  const catIcons = { חשמל:'⚡', מים:'💧', ניקיון:'🧹', מעלית:'🛗', ביטוח:'🛡️', 'כיבוי אש':'🚒', 'עמלות בנק':'🏦', תיקון:'🔧', אחר:'📋' };
+  const total = allExpenses.reduce((s,e) => s + (e.amount||0), 0);
+  let html = '<div style="padding:12px 16px 4px;display:flex;justify-content:space-between;align-items:center;">'
+    + '<span style="font-size:15px;font-weight:700;">סה"כ הוצאות</span>'
+    + '<span style="font-size:18px;font-weight:700;color:var(--red);">₪'+total.toLocaleString('he-IL')+'</span>'
+    + '</div>';
+  html += allExpenses.map(e => {
+    const icon = catIcons[e.category] || '📋';
+    return '<div class="card" style="margin:8px 16px;">'
+      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">'
+      + '<div style="flex:1;">'
+      + '<div style="font-size:15px;font-weight:700;">'+icon+' '+e.description+'</div>'
+      + '<div style="font-size:12px;color:var(--gray-400);margin-top:4px;">'+e.category+' • '+(e.date||'')+'</div>'
+      + '</div>'
+      + '<span style="font-size:17px;font-weight:700;color:var(--red);">₪'+(e.amount||0).toLocaleString('he-IL')+'</span>'
+      + '</div>'
+      + (isAdmin ? '<div style="display:flex;gap:8px;border-top:1px solid var(--gray-100);padding-top:10px;">'
+        + '<button class="btn-icon" style="flex:1;padding:8px;font-size:13px;" onclick="editExpense(\''+e.id+'\')">✏️ ערוך</button>'
+        + '<button class="btn-danger" style="flex:1;padding:8px;font-size:13px;" onclick="deleteExpense(\''+e.id+'\')">🗑 מחק</button>'
+        + '</div>' : '')
+      + '</div>';
+  }).join('');
+  container.innerHTML = html;
+}
+
+window.openAddExpense = () => {
+  document.getElementById('modal-expense-title').textContent = 'הוצאה חדשה';
+  document.getElementById('edit-expense-id').value = '';
+  document.getElementById('exp-cat').value = 'חשמל';
+  document.getElementById('exp-method').value = 'bank';
+  document.getElementById('exp-desc').value = '';
+  document.getElementById('exp-amount').value = '';
+  document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
+  openModal('modal-expense');
+};
+
+window.editExpense = (id) => {
+  if (!isAdmin) { showToast('אין הרשאה'); return; }
+
+  const e = allExpenses.find(x => x.id === id);
+  if (!e) return;
+  document.getElementById('modal-expense-title').textContent = 'ערוך הוצאה';
+  document.getElementById('edit-expense-id').value = id;
+  document.getElementById('exp-cat').value = e.category || 'אחר';
+  document.getElementById('exp-method').value = e.method || 'bank';
+  document.getElementById('exp-desc').value = e.description || '';
+  document.getElementById('exp-amount').value = e.amount || '';
+  document.getElementById('exp-date').value = e.date || '';
+  openModal('modal-expense');
+};
+
+window.saveExpense = async () => {
+  if (!isAdmin) { showToast('אין הרשאה'); return; }
+
+  const id = document.getElementById('edit-expense-id').value;
+  const desc = document.getElementById('exp-desc').value.trim();
+  const amount = parseInt(document.getElementById('exp-amount').value);
+  if (!desc || !amount) { showToast('חובה למלא תיאור וסכום'); return; }
+  const data = {
+    category: document.getElementById('exp-cat').value,
+    description: desc, amount,
+    method: document.getElementById('exp-method').value,
+    date: document.getElementById('exp-date').value,
+    updatedAt: serverTimestamp()
+  };
+  try {
+    if (id) {
+      await updateDoc(doc(db, 'buildings', buildingId, 'expenses', id), data);
+      showToast('✅ הוצאה עודכנה');
+    } else {
+      data.createdAt = serverTimestamp();
+      data.createdBy = currentUser.uid;
+      await addDoc(collection(db, 'buildings', buildingId, 'expenses'), data);
+      showToast('✅ הוצאה נשמרה');
+    }
+    closeModal('modal-expense');
+    loadExpenses();
+    loadBalance();
+  } catch(e) { showToast('שגיאה: '+e.message); }
+};
+
+window.deleteExpense = async (id) => {
+  if (!isAdmin) { showToast('אין הרשאה'); return; }
+
+  if (!confirm('למחוק הוצאה זו?')) return;
+  await deleteDoc(doc(db, 'buildings', buildingId, 'expenses', id));
+  showToast('🗑 נמחק');
+  loadExpenses();
+  loadBalance();
+};
+
+// ===== BALANCE =====
+async function loadBalance() {
+  const container = document.getElementById('balance-content');
+  container.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
+
+  // Total collected (all time)
+  const paySnap = await getDocs(collection(db, 'buildings', buildingId, 'payments'));
+  const totalCollected = paySnap.docs.reduce((s,d) => s + (d.data().amount||0), 0);
+  const cashCollected = paySnap.docs.filter(d => d.data().method === 'cash').reduce((s,d) => s + (d.data().amount||0), 0);
+  const transferCollected = totalCollected - cashCollected;
+
+  // Total expenses (all time)
+  const expSnap = await getDocs(collection(db, 'buildings', buildingId, 'expenses'));
+  const totalExpenses = expSnap.docs.reduce((s,d) => s + (d.data().amount||0), 0);
+  const cashExpenses = expSnap.docs.filter(d => d.data().method === 'cash').reduce((s,d) => s + (d.data().amount||0), 0);
+  const bankExpenses = totalExpenses - cashExpenses;
+  allExpenses = expSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  // הפקדות מזומן לבנק
+  const depositSnap = await getDocs(collection(db, 'buildings', buildingId, 'cashDeposits'));
+  const totalDeposits = depositSnap.docs.reduce((s,d) => s + (d.data().amount||0), 0);
+
+  const openingBalance = buildingData?.openingBalance || 0;
+  const bankBalance = openingBalance + transferCollected + totalDeposits - bankExpenses;
+  const cashBalance = cashCollected - totalDeposits - cashExpenses;
+  const balance = bankBalance + cashBalance;
+  const balColor = balance >= 0 ? 'var(--green)' : 'var(--red)';
+  const balIcon = balance >= 0 ? '📈' : '📉';
+
+  // Group expenses by category
+  const byCat = {};
+  allExpenses.forEach(e => {
+    byCat[e.category] = (byCat[e.category]||0) + (e.amount||0);
+  });
+  const catIcons = { חשמל:'⚡', מים:'💧', ניקיון:'🧹', מעלית:'🛗', ביטוח:'🛡️', 'כיבוי אש':'🚒', 'עמלות בנק':'🏦', תיקון:'🔧', אחר:'📋' };
+
+  let html = '<div style="padding:16px;">';
+  // Main balance card - יתרה בחשבון הבנק
+  html += '<div class="card" style="margin-bottom:16px;text-align:center;">'
+    + '<div style="font-size:14px;color:var(--gray-600);margin-bottom:8px;">🏦 יתרה בחשבון הבנק</div>'
+    + '<div style="font-size:36px;font-weight:800;color:'+(bankBalance>=0?'var(--green)':'var(--red)')+';">₪'+Math.abs(bankBalance).toLocaleString('he-IL')+'</div>'
+    + '<div style="font-size:13px;color:var(--gray-400);margin-top:4px;">'+(bankBalance>=0?'עודף':'גירעון')+'</div>'
+    + '</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">'
+    + '<div class="stat-card"><div class="stat-value green">₪'+transferCollected.toLocaleString('he-IL')+'</div><div class="stat-label">💳 העברות</div></div>'
+    + '<div class="stat-card"><div class="stat-value green">₪'+cashCollected.toLocaleString('he-IL')+'</div><div class="stat-label">💵 מזומן שנגבה</div></div>'
+    + '</div>';
+  html += '<div class="card" style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center;">'
+    + '<span style="font-size:13px;color:var(--gray-600);">💵 קופת מזומן</span>'
+    + '<span style="font-weight:700;font-size:18px;color:'+(cashBalance>=0?'var(--green)':'var(--red)')+';">₪'+cashBalance.toLocaleString('he-IL')+'</span>'
+    + '</div>';
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;">'
+    + '<div class="stat-card"><div class="stat-value green">₪'+totalCollected.toLocaleString('he-IL')+'</div><div class="stat-label">סה"כ גבייה</div></div>'
+    + '<div class="stat-card"><div class="stat-value red">₪'+totalExpenses.toLocaleString('he-IL')+'</div><div class="stat-label">סה"כ הוצאות</div></div>'
+    + '</div>';
+  // Expenses by category
+  if (Object.keys(byCat).length) {
+    html += '<div style="font-size:15px;font-weight:700;margin-bottom:10px;">פירוט הוצאות לפי קטגוריה</div>';
+    Object.entries(byCat).sort((a,b)=>b[1]-a[1]).forEach(([cat,amt]) => {
+      const icon = catIcons[cat]||'📋';
+      const pct = totalExpenses > 0 ? Math.round(amt/totalExpenses*100) : 0;
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--gray-100);">'
+        + '<span style="font-size:14px;">'+icon+' '+cat+'</span>'
+        + '<div style="text-align:left;">'
+        + '<span style="font-weight:700;color:var(--red);">₪'+amt.toLocaleString('he-IL')+'</span>'
+        + '<span style="font-size:11px;color:var(--gray-400);margin-right:6px;">'+pct+'%</span>'
+        + '</div></div>';
+    });
+    
+    // Expenses detail table
+    html += '<div style="font-size:15px;font-weight:700;margin-top:20px;margin-bottom:10px;">פירוט הוצאות</div>';
+    html += '<div style="overflow-x:auto;">'
+      + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+      + '<thead><tr style="background-color:var(--blue);color:white;">'
+      + '<th style="border:1px solid #ddd;padding:8px;text-align:center;">קטגוריה</th>'
+      + '<th style="border:1px solid #ddd;padding:8px;text-align:center;">סכום</th>'
+      + '<th style="border:1px solid #ddd;padding:8px;text-align:right;">תיאור</th>'
+      + '<th style="border:1px solid #ddd;padding:8px;text-align:center;">תאריך</th>'
+      + '</tr></thead><tbody>';
+    allExpenses.sort((a,b) => (b.date||'').localeCompare(a.date||'')).forEach(e => {
+      html += '<tr>'
+        + '<td style="border:1px solid #ddd;padding:8px;text-align:center;">'+(e.category||'').replace(/ /g,'\u00A0')+'</td>'
+        + '<td style="border:1px solid #ddd;padding:8px;text-align:center;font-weight:bold;">₪'+(e.amount||0).toLocaleString('he-IL')+'</td>'
+        + '<td style="border:1px solid #ddd;padding:8px;text-align:right;">'+e.description+'</td>'
+        + '<td style="border:1px solid #ddd;padding:8px;text-align:center;">'+e.date+'</td>'
+        + '</tr>';
+    });
+    html += '</tbody></table></div>';
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+// ===== PAYMENT LOG & PDF REPORT =====
+window.openLog = async () => {
+  const container = document.getElementById('log-content');
+  container.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
+  openModal('modal-log');
+
+  const snap = await getDocs(query(collection(db, 'buildings', buildingId, 'paymentLog'), orderBy('at','desc')));
+  const entries = snap.docs.map(d => ({id: d.id, ...d.data()}));
+  
+  if (!entries.length) {
+    container.innerHTML = '<div class="card-empty">אין רשומות בלוג</div>';
+    return;
+  }
+
+  let html = '<div style="padding:12px 0;max-height:70vh;overflow-y:auto;">';
+  entries.forEach(p => {
+    const dateStr = p.at ? new Date(p.at.toDate()).toLocaleString('he-IL') : '-';
+    const monthStr = p.month ? p.month : '-';
+    const isCancelled = p.action === 'cancelled';
+    const badge = isCancelled
+      ? '<div style="text-align:left;color:var(--red);font-weight:600;">❌ בוטל</div>'
+      : '<div style="text-align:left;color:var(--green);font-weight:600;">✅ שולם</div>';
+    html += '<div class="card" style="margin-bottom:8px;padding:12px;font-size:13px;'+(isCancelled ? 'opacity:0.7;' : '')+'">'
+      + '<div style="display:flex;justify-content:space-between;align-items:flex-start;">'
+      + '<div>'
+      + '<div style="font-weight:700;'+(isCancelled ? 'text-decoration:line-through;' : '')+'">'+p.name+' (דירה '+p.apt+')</div>'
+      + '<div style="color:var(--gray-400);font-size:12px;margin-top:2px;">'+monthStr+' • ₪'+(p.amount||0)+'</div>'
+      + '<div style="color:var(--gray-400);font-size:11px;margin-top:4px;">📅 '+dateStr+' ✏️ '+(p.byName || 'מנהל')+'</div>'
+      + '</div>'
+      + badge
+      + '</div>'
+      + '</div>';
+  });
+  html += '</div>';
+  container.innerHTML = html;
+};
+
+window.generatePDF = async () => {
+  try {
+    showToast('📄 מכין דוח...');
+    // Load html2pdf library
+    if (!window.html2pdf) {
+      const script = document.createElement('script');
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+      await new Promise((resolve, reject) => {
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
+    await createPDFReport();
+  } catch(e) {
+    showToast('שגיאה: ' + e.message);
+  }
+};
+
+async function createPDFReport() {
+  const selectedYm = document.getElementById('payment-month-select').value;
+  const year = selectedYm ? parseInt(selectedYm.split('-')[0]) : new Date().getFullYear();
+  
+  // Fetch data
+  const resSnap = await getDocs(collection(db, 'buildings', buildingId, 'residents'));
+  const residents = resSnap.docs.map(d => ({id: d.id, ...d.data()})).sort((a,b) => (parseInt(a.apt)||0) - (parseInt(b.apt)||0));
+  
+  const paySnap = await getDocs(query(collection(db, 'buildings', buildingId, 'payments')));
+  const paymentMap = {};
+  paySnap.docs.forEach(d => {
+    const p = d.data();
+    if (p.month && p.month.startsWith(String(year))) {
+      const key = p.apt + '_' + p.month;
+      paymentMap[key] = p;
+    }
+  });
+
+  const months = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  
+  // Load expenses
+  const expSnap = await getDocs(query(collection(db, 'buildings', buildingId, 'expenses'), orderBy('date','asc')));
+  const expenses = expSnap.docs.map(d => ({id: d.id, ...d.data()})).filter(e => e.date && e.date.startsWith(String(year)));
+  let totalExpenses = 0;
+  const expenseRows = expenses.map(e => {
+    totalExpenses += (e.amount || 0);
+    return `<tr>
+      <td style="border:1px solid #ddd;padding:8px;text-align:center;">${(e.category || '-').replace(/ /g, '\u00A0')}</td>
+      <td style="border:1px solid #ddd;padding:8px;text-align:center;font-weight:bold;">₪${(e.amount||0).toLocaleString('he-IL')}</td>
+      <td style="border:1px solid #ddd;padding:8px;text-align:right;">${(e.description || '-').replace(/ /g, '\u00A0')}</td>
+      <td style="border:1px solid #ddd;padding:8px;text-align:center;">${e.date || '-'}</td>
+    </tr>`;
+  }).join('');
+  
+  let tableRows = '';
+  let totalCollected = 0;
+  let paidCount = 0;
+  
+  residents.forEach(r => {
+    let rowTotal = 0;
+    let rowHtml = `<tr>
+      <td style="font-weight:bold;text-align:center;border:1px solid #ddd;padding:8px;">${r.apt}</td>
+      <td style="text-align:right;border:1px solid #ddd;padding:8px;">${(r.name||"").replace(/ /g,"\u00A0")}</td>`;
+    
+    for (let m = 0; m < 12; m++) {
+      const ym = year + '-' + String(m+1).padStart(2,'0');
+      const key = r.apt + '_' + ym;
+      const paid = paymentMap[key];
+      const fee = aptFee(r.apt, r);
+      if (paid) {
+        rowHtml += `<td style="text-align:center;border:1px solid #ddd;padding:8px;background:#e8f7f2;color:#0E9F6E;font-weight:bold;">✓</td>`;
+        rowTotal += (paid.amount || fee);
+        paidCount++;
+      } else {
+        rowHtml += `<td style="text-align:center;border:1px solid #ddd;padding:8px;">-</td>`;
+      }
+    }
+    
+    rowHtml += `<td style="text-align:center;border:1px solid #ddd;padding:8px;font-weight:bold;">₪${rowTotal}</td></tr>`;
+    tableRows += rowHtml;
+    totalCollected += rowTotal;
+  });
+
+  // חישוב יתרות לדוח
+  const openingBalance = buildingData?.openingBalance || 0;
+  const allPaySnap = await getDocs(collection(db, 'buildings', buildingId, 'payments'));
+  const cashCollectedAll = allPaySnap.docs.filter(d => d.data().method === 'cash').reduce((s,d) => s + (d.data().amount||0), 0);
+  const transferCollectedAll = allPaySnap.docs.reduce((s,d) => s + (d.data().amount||0), 0) - cashCollectedAll;
+  const allExpSnap = await getDocs(collection(db, 'buildings', buildingId, 'expenses'));
+  const cashExpAll = allExpSnap.docs.filter(d => d.data().method === 'cash').reduce((s,d) => s + (d.data().amount||0), 0);
+  const bankExpAll = allExpSnap.docs.reduce((s,d) => s + (d.data().amount||0), 0) - cashExpAll;
+  const depositSnap = await getDocs(collection(db, 'buildings', buildingId, 'cashDeposits'));
+  const totalDeposits = depositSnap.docs.reduce((s,d) => s + (d.data().amount||0), 0);
+  const bankBalance = openingBalance + transferCollectedAll + totalDeposits - bankExpAll;
+  const cashBalance = cashCollectedAll - totalDeposits - cashExpAll;
+
+  const html = `
+    <html>
+    <head>
+      <meta charset="utf-8"/>
+      <style>
+        body { font-family: Arial, Helvetica, sans-serif; direction: rtl; text-align: right; padding: 20px; unicode-bidi: plaintext; word-spacing: normal; }
+        td, th { word-spacing: normal; letter-spacing: normal; word-break: normal; white-space: normal; }
+        h1 { text-align: center; color: #1A56DB; margin-bottom: 5px; word-spacing: normal; letter-spacing: normal; }
+        h2 { text-align: center; color: #666; font-size: 16px; margin-top: 0; margin-bottom: 20px; word-spacing: normal; letter-spacing: normal; }
+        table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px; }
+        th { background: #1A56DB; color: white; padding: 10px; border: 1px solid #ddd; text-align: center; font-weight: bold; }
+        td { padding: 8px; border: 1px solid #ddd; }
+        .summary { margin-top: 30px; font-size: 16px; }
+        .summary-line { margin: 10px 0; }
+        .total { font-weight: bold; color: #1A56DB; }
+      </style>
+    </head>
+    <body>
+      <h1 style="letter-spacing:4px;">דוח תשלומים לוועד הבית</h1>
+      <h2>${(buildingData?.address || '').replace(/ /g, '\u00A0')}</h2>
+      <h2>שנה&nbsp;${year}</h2>
+      
+      <table>
+        <thead>
+          <tr>
+            <th>דירה</th>
+            <th>שם</th>
+            ${months.map(m => `<th>${m}</th>`).join('')}
+            <th>סה"כ</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRows}
+        </tbody>
+      </table>
+
+      <h2>סיכום&nbsp;הוצאות&nbsp;לפי&nbsp;קטגוריה</h2>
+      <table style="width:100%;table-layout:fixed;">
+        <thead>
+          <tr>
+            <th style="width:50%;">קטגוריה</th>
+            <th style="width:30%;">סכום</th>
+            <th style="width:20%;">אחוז</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${(() => {
+            const catTotals = {};
+            expenses.forEach(e => {
+              const cat = e.category || 'אחר';
+              catTotals[cat] = (catTotals[cat] || 0) + (e.amount || 0);
+            });
+            return Object.entries(catTotals)
+              .sort((a,b) => b[1]-a[1])
+              .map(([cat, sum]) => {
+                const pct = totalExpenses ? Math.round(sum/totalExpenses*100) : 0;
+                return '<tr><td style="text-align:right;border:1px solid #ddd;padding:8px;">'+cat.replace(/ /g,'\u00A0')+'</td>'
+                  +'<td style="text-align:center;border:1px solid #ddd;padding:8px;font-weight:bold;">₪'+sum.toLocaleString('he-IL')+'</td>'
+                  +'<td style="text-align:center;border:1px solid #ddd;padding:8px;">'+pct+'%</td></tr>';
+              }).join('') || '<tr><td colspan="3" style="text-align:center;border:1px solid #ddd;padding:8px;">אין הוצאות</td></tr>';
+          })()}
+        </tbody>
+      </table>
+
+      <h2>פירוט הוצאות ${year}</h2>
+      <table style="width:100%;table-layout:fixed;">
+        <thead>
+          <tr>
+            <th style="width:25%;">קטגוריה</th>
+            <th style="width:20%;">סכום</th>
+            <th style="width:35%;">תיאור</th>
+            <th style="width:20%;">תאריך</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${expenseRows || '<tr><td colspan="4" style="text-align:center;border:1px solid #ddd;padding:8px;">אין הוצאות רשומות</td></tr>'}
+        </tbody>
+      </table>
+
+      <div class="summary">
+        ${openingBalance ? `<div class="summary-line"><span class="total">סה"כ איזון חד פעמי מול הבנק:</span> ₪${openingBalance.toLocaleString('he-IL')}</div>` : ''}
+        <div class="summary-line"><span class="total">סה"כ הכנסות:</span> ₪${totalCollected.toLocaleString('he-IL')}</div>
+        <div class="summary-line"><span class="total">סה"כ הוצאות:</span> ₪${totalExpenses.toLocaleString('he-IL')}</div>
+        <div style="border-top:2px solid #000;margin:15px 0;padding:10px 0;">
+          <div class="summary-line"><span class="total">יתרה&nbsp;בחשבון&nbsp;הבנק</span> &#8362;${bankBalance.toLocaleString('he-IL')}</div>
+          <div class="summary-line"><span class="total">יתרת&nbsp;מזומן</span> &#8362;${cashBalance.toLocaleString('he-IL')}</div>
+        </div>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const element = document.createElement('div');
+  element.innerHTML = html;
+  
+  const opt = {
+    margin: 10,
+    filename: `vaad_bait_${year}.pdf`,
+    image: { type: 'jpeg', quality: 0.98 },
+    html2canvas: { scale: 2 },
+    jsPDF: { orientation: 'landscape', unit: 'mm', format: 'a4' }
+  };
+  
+  html2pdf().set(opt).from(element).save();
+  showToast('📄 דוח PDF הורד בהצלחה');
+}
+
+// ===== RESIDENT PAYMENT HISTORY =====
+// current resident in history modal
+let _histApt, _histName, _histFee;
+
+window.showResidentHistory = async (apt, name, fee) => {
+  _histApt = apt; _histName = name; _histFee = fee;
+  document.getElementById('modal-history-title').textContent = name + ' - דירה ' + apt;
+  document.getElementById('modal-history-content').innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
+  openModal('modal-resident-history');
+  await renderHistoryGrid(apt, name, fee);
+};
+
+async function renderHistoryGrid(apt, name, fee) {
+  const year = new Date().getFullYear();
+  const monthNames = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+  const snap = await getDocs(query(collection(db, 'buildings', buildingId, 'payments'), where('apt','==', parseInt(apt))));
+  const paidMonths = {};
+  snap.docs.forEach(d => {
+    const p = d.data();
+    if (p.month && p.month.startsWith(String(year))) paidMonths[p.month] = { id: d.id, ...p };
+  });
+  const now = new Date();
+  let grid = '<div id="hist-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">';
+  for (let m = 0; m < 12; m++) {
+    const ym = year + '-' + String(m+1).padStart(2,'0');
+    const isFuture = (m > now.getMonth());
+    const paid = paidMonths[ym];
+    if (paid) {
+      grid += '<div class="hist-cell" data-ym="'+ym+'" data-pid="'+paid.id+'" style="background:var(--green-light);border-radius:10px;padding:10px 6px;text-align:center;cursor:'+( isAdmin?'pointer':'default')+'">'
+        + '<div style="font-size:12px;font-weight:700;color:var(--green);">'+monthNames[m]+'</div>'
+        + '<div style="font-size:18px;margin:4px 0;">✅</div>'
+        + '<div style="font-size:11px;color:var(--green);">₪'+(paid.amount||fee)+'</div>'
+        + '</div>';
+    } else if (isFuture) {
+      grid += '<div style="background:var(--gray-100);border-radius:10px;padding:10px 6px;text-align:center;">'
+        + '<div style="font-size:12px;font-weight:700;color:var(--gray-400);">'+monthNames[m]+'</div>'
+        + '<div style="font-size:18px;margin:4px 0;">○</div>'
+        + '<div style="font-size:11px;color:var(--gray-400);">-</div>'
+        + '</div>';
+    } else {
+      grid += '<div class="hist-cell" data-ym="'+ym+'" data-pid="" style="background:var(--red-light);border-radius:10px;padding:10px 6px;text-align:center;cursor:'+( isAdmin?'pointer':'default')+'">'
+        + '<div style="font-size:12px;font-weight:700;color:var(--red);">'+monthNames[m]+'</div>'
+        + '<div style="font-size:18px;margin:4px 0;">❌</div>'
+        + '<div style="font-size:11px;color:var(--red);">₪'+fee+'</div>'
+        + '</div>';
+    }
+  }
+  grid += '</div>';
+  const paidCount = Object.keys(paidMonths).length;
+  const totalPaid = Object.values(paidMonths).reduce((s,p) => s + (p.amount||fee), 0);
+  const summary = '<div style="display:flex;justify-content:space-between;margin-bottom:14px;font-size:14px;">'
+    + '<span style="color:var(--green);font-weight:600;">שולם: ₪'+totalPaid+'</span>'
+    + '<span style="color:var(--gray-600);">'+paidCount+'/12 חודשים</span>'
+    + '</div>'
+    + (isAdmin ? '<div style="font-size:12px;color:var(--gray-400);margin-bottom:12px;text-align:center;">לחץ על חודש לסימון/ביטול תשלום</div>' : '');
+  document.getElementById('modal-history-content').innerHTML = summary + grid;
+  // Event delegation - attach after render
+  if (isAdmin) {
+    document.getElementById('hist-grid').addEventListener('click', async (e) => {
+      const cell = e.target.closest('.hist-cell');
+      if (!cell) return;
+      const ym = cell.dataset.ym;
+      const pid = cell.dataset.pid;
+      if (pid) {
+        if (!confirm('לבטל תשלום ' + ym + '?')) return;
+        const snap = await getDoc(doc(db, 'buildings', buildingId, 'payments', pid));
+        const p = snap.exists() ? snap.data() : {};
+        await deleteDoc(doc(db, 'buildings', buildingId, 'payments', pid));
+        try {
+          await addDoc(collection(db, 'buildings', buildingId, 'paymentLog'), {
+            apt: parseInt(_histApt), name: _histName, amount: _histFee, month: ym, action: 'cancelled',
+            at: serverTimestamp(), by: currentUser.uid, byName: currentUser.name || currentUser.email
+          });
+        } catch(logErr) {
+          console.warn('paymentLog write failed:', logErr);
+        }
+        showToast('תשלום בוטל');
+      } else {
+        const histResident = allResidents.find(r => r.apt === parseInt(_histApt));
+        const histMethod = histResident?.paymentMethod || 'transfer';
+        await addDoc(collection(db, 'buildings', buildingId, 'payments'), {
+          apt: parseInt(_histApt), name: _histName, amount: _histFee,
+          month: ym, method: histMethod, paidAt: serverTimestamp(), recordedBy: currentUser.uid
+        });
+        try {
+          await addDoc(collection(db, 'buildings', buildingId, 'paymentLog'), {
+            apt: parseInt(_histApt), name: _histName, amount: _histFee, month: ym, method: histMethod, action: 'paid',
+            at: serverTimestamp(), by: currentUser.uid, byName: currentUser.name || currentUser.email
+          });
+        } catch(logErr) {
+          console.warn('paymentLog write failed:', logErr);
+        }
+        showToast('✅ שולם');
+      }
+      await renderHistoryGrid(_histApt, _histName, _histFee);
+      loadPayments();
+    });
+  }
+}
+
+
+
+// ===== ISSUES =====
+function loadIssues() {
+  onSnapshot(query(collection(db, 'buildings', buildingId, 'issues'), orderBy('createdAt','desc')), (snap) => {
+    allIssues = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderIssues();
+    updateHomeStats();
+  });
+}
+
+function renderIssues() {
+  const list = currentIssueFilter === 'all'
+    ? allIssues
+    : allIssues.filter(i => i.status === currentIssueFilter);
+
+  const container = document.getElementById('issues-list');
+  if (!list.length) {
+    container.innerHTML = '<div class="card-empty" style="margin:16px;">אין קריאות תחזוקה</div>';
+    return;
+  }
+
+  container.innerHTML = list.map(issue => {
+    const statusClass = issue.status === 'סגור' ? 'badge-green' : issue.status === 'בטיפול' ? 'badge-blue' : 'badge-orange';
+    const prioClass = issue.priority === 'דחוף' ? 'priority-dchuf' : issue.priority === 'נמוך' ? 'priority-namuch' : 'priority-beinoni';
+    const dateStr = issue.createdAt ? new Date(issue.createdAt.toDate()).toLocaleDateString('he-IL') : '';
+    return `
+      <div class="issue-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div class="issue-title">${issue.title}</div>
+          <span class="badge ${statusClass}">${issue.status}</span>
+        </div>
+        <div class="issue-meta">${issue.location || ''} • ${dateStr}</div>
+        ${issue.description ? `<div class="issue-desc">${issue.description}</div>` : ''}
+        <div class="issue-footer">
+          <span class="badge ${prioClass}">${issue.priority}</span>
+          ${isAdmin ? `
+            <button class="btn-icon" onclick="editIssue('${issue.id}')">✏️ ערוך</button>
+            <button class="btn-danger" onclick="deleteIssue('${issue.id}')">🗑 מחק</button>
+          ` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.filterIssues = (filter, btn) => {
+  currentIssueFilter = filter;
+  document.querySelectorAll('.filter-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderIssues();
+};
+
+window.openAddIssue = () => {
+  document.getElementById('modal-issue-title').textContent = 'קריאת תחזוקה חדשה';
+  document.getElementById('edit-issue-id').value = '';
+  document.getElementById('i-title').value = '';
+  document.getElementById('i-location').value = '';
+  document.getElementById('i-priority').value = 'בינוני';
+  document.getElementById('i-desc').value = '';
+  document.getElementById('i-status').value = 'פתוח';
+  openModal('modal-issue');
+};
+
+window.editIssue = (id) => {
+  const issue = allIssues.find(x => x.id === id);
+  if (!issue) return;
+  document.getElementById('modal-issue-title').textContent = 'ערוך קריאה';
+  document.getElementById('edit-issue-id').value = id;
+  document.getElementById('i-title').value = issue.title || '';
+  document.getElementById('i-location').value = issue.location || '';
+  document.getElementById('i-priority').value = issue.priority || 'בינוני';
+  document.getElementById('i-desc').value = issue.description || '';
+  document.getElementById('i-status').value = issue.status || 'פתוח';
+  openModal('modal-issue');
+};
+
+window.saveIssue = async () => {
+  if (!isAdmin) { showToast('אין הרשאה'); return; }
+
+  const id = document.getElementById('edit-issue-id').value;
+  const title = document.getElementById('i-title').value.trim();
+  if (!title) { showToast('חובה למלא כותרת'); return; }
+  const data = {
+    title,
+    location: document.getElementById('i-location').value.trim(),
+    priority: document.getElementById('i-priority').value,
+    description: document.getElementById('i-desc').value.trim(),
+    status: document.getElementById('i-status').value,
+    updatedAt: serverTimestamp()
+  };
+  try {
+    if (id) {
+      await updateDoc(doc(db, 'buildings', buildingId, 'issues', id), data);
+      showToast('✅ קריאה עודכנה');
+    } else {
+      data.createdAt = serverTimestamp();
+      data.createdBy = currentUser.uid;
+      await addDoc(collection(db, 'buildings', buildingId, 'issues'), data);
+      showToast('✅ קריאה נפתחה');
+    }
+    closeModal('modal-issue');
+  } catch(e) { showToast('שגיאה: ' + e.message); }
+};
+
+window.deleteIssue = async (id) => {
+  if (!isAdmin) { showToast('אין הרשאה'); return; }
+
+  if (!confirm('למחוק את הקריאה?')) return;
+  await deleteDoc(doc(db, 'buildings', buildingId, 'issues', id));
+  showToast('🗑 קריאה נמחקה');
+};
+
+// ===== ANNOUNCEMENTS =====
+function loadAnnouncements() {
+  onSnapshot(query(collection(db, 'buildings', buildingId, 'announcements'), orderBy('createdAt','desc')), (snap) => {
+    allAnnouncements = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderAnnouncements();
+    renderHomeAnnouncements();
+  });
+}
+
+function renderAnnouncements() {
+  const container = document.getElementById('announcements-list');
+  if (!allAnnouncements.length) {
+    container.innerHTML = '<div class="card-empty">אין הודעות</div>';
+    return;
+  }
+  container.innerHTML = allAnnouncements.map(a => {
+    const dateStr = a.createdAt ? new Date(a.createdAt.toDate()).toLocaleDateString('he-IL') : '';
+    const catClass = a.category === 'דחוף' ? 'badge-red' : a.category === 'כספים' ? 'badge-green' : a.category === 'תחזוקה' ? 'badge-orange' : 'badge-blue';
+    return `
+      <div class="announce-card">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+          <div class="announce-title">${a.title}</div>
+          <span class="badge ${catClass}">${a.category || 'כללי'}</span>
+        </div>
+        <div class="announce-meta">${dateStr}</div>
+        <div class="announce-body">${a.body}</div>
+        ${isAdmin ? `<div style="margin-top:10px;"><button class="btn-danger" onclick="deleteAnnounce('${a.id}')">🗑 מחק</button></div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function renderHomeAnnouncements() {
+  const container = document.getElementById('home-announcements');
+  const recent = allAnnouncements.slice(0,2);
+  if (!recent.length) {
+    container.innerHTML = '<div class="card-empty">אין הודעות</div>';
+    return;
+  }
+  container.innerHTML = recent.map(a => {
+    const catClass = a.category === 'דחוף' ? 'badge-red' : a.category === 'כספים' ? 'badge-green' : a.category === 'תחזוקה' ? 'badge-orange' : 'badge-blue';
+    return `
+      <div class="card" style="margin-bottom:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-direction:row-reverse;">
+          <div style="font-weight:600;font-size:15px;">${a.title}</div>
+          <span class="badge ${catClass}">${a.category || 'כללי'}</span>
+        </div>
+        <div style="font-size:13px;color:var(--gray-600);margin-top:6px;line-height:1.5;text-align:right;">${a.body.substring(0,100)}${a.body.length>100?'...':''}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+window.openAddAnnounce = () => {
+  document.getElementById('a-title').value = '';
+  document.getElementById('a-cat').value = 'כללי';
+  document.getElementById('a-body').value = '';
+  openModal('modal-announce');
+};
+
+window.saveAnnounce = async () => {
+  if (!isAdmin) { showToast('אין הרשאה'); return; }
+
+  const title = document.getElementById('a-title').value.trim();
+  const body = document.getElementById('a-body').value.trim();
+  if (!title || !body) { showToast('חובה למלא כותרת ותוכן'); return; }
+  try {
+    await addDoc(collection(db, 'buildings', buildingId, 'announcements'), {
+      title, body,
+      category: document.getElementById('a-cat').value,
+      createdAt: serverTimestamp(),
+      createdBy: currentUser.uid
+    });
+    showToast('📢 הודעה פורסמה');
+    closeModal('modal-announce');
+  } catch(e) { showToast('שגיאה: ' + e.message); }
+};
+
+window.deleteAnnounce = async (id) => {
+  if (!isAdmin) { showToast('אין הרשאה'); return; }
+
+  if (!confirm('למחוק את ההודעה?')) return;
+  await deleteDoc(doc(db, 'buildings', buildingId, 'announcements', id));
+  showToast('🗑 הודעה נמחקה');
+};
+
+// ===== HOME STATS =====
+function updateHomeStats() {
+  const openIssues = allIssues.filter(i => i.status !== 'סגור').length;
+  document.getElementById('stat-issues').textContent = openIssues;
+
+  // הצג תקלות פתוחות בדף הבית
+  const homeIssuesEl = document.getElementById('home-issues');
+  if (!homeIssuesEl) return;
+  const open = allIssues.filter(i => i.status !== 'סגור').slice(0, 3);
+  if (open.length === 0) {
+    homeIssuesEl.innerHTML = '<div class="card" style="color:var(--gray-400);text-align:center;">אין תקלות פתוחות</div>';
+    return;
+  }
+  homeIssuesEl.innerHTML = open.map(issue => {
+    const statusColor = issue.status === 'דחוף' ? 'var(--red)' : issue.status === 'בטיפול' ? 'var(--orange)' : 'var(--blue)';
+    return `<div class="card" style="margin-bottom:8px;" onclick="navigate('issues')">
+      <div style="text-align:right;">
+        <span style="font-weight:700;font-size:14px;">${issue.title || ''}</span>
+        <span style="font-size:11px;font-weight:600;color:${statusColor};border:1px solid ${statusColor};border-radius:20px;padding:2px 8px;margin-right:8px;">${issue.status || 'פתוח'}</span>
+      </div>
+      <div style="font-size:12px;color:var(--gray-400);margin-top:4px;text-align:right;">${issue.location || ''} • ${issue.date || ''}</div>
+    </div>`;
+  }).join('');
+}
+
+// ===== MODAL HELPERS =====
+window.openModal = (id) => {
+  document.getElementById(id).classList.add('open');
+  history.pushState({ modal: id }, '', '');
+};
+window.closeModal = (id) => {
+  document.getElementById(id).classList.remove('open');
+};
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+// r-apt auto-fill fee
+document.getElementById('r-apt').addEventListener('input', function() {
+  const fee = aptFee(this.value);
+  document.getElementById('r-fee').value = fee;
+});
+
+// Initial: activate home screen
+history.replaceState({ screen: 'home' }, '', '');
+navigate('home', false);
+
+
+// ===== ADDRESS AUTOCOMPLETE (Nominatim) =====
+let addressTimer = null;
+
+window.addressAutocomplete = (val) => {
+  const box = document.getElementById('address-suggestions');
+  if (!val || val.length < 3) { box.style.display = 'none'; return; }
+  clearTimeout(addressTimer);
+  addressTimer = setTimeout(async () => {
+    try {
+      const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(val)}&countrycodes=il&format=json&addressdetails=1&limit=5&accept-language=he`;
+      const res = await fetch(url, { headers: { 'Accept-Language': 'he' } });
+      const data = await res.json();
+      if (!data.length) { box.style.display = 'none'; return; }
+      box.innerHTML = data.map(item => {
+        const addr = item.address;
+        const road = addr.road || addr.pedestrian || '';
+        const num = addr.house_number || '';
+        const city = addr.city || addr.town || addr.village || '';
+        const street = [road, num].filter(Boolean).join(' ');
+        const label = street && city ? street + ', ' + city : item.display_name.split(',').slice(0,2).join(',').trim();
+        return `<div onclick="selectAddress('${label.replace(/'/g,"\'")}', this.parentElement)"
+          style="padding:10px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid #f0f0f0;"
+          onmouseover="this.style.background='#f5f5f5'" onmouseout="this.style.background=''">${label}</div>`;
+      }).join('');
+      box.style.display = 'block';
+    } catch(e) { box.style.display = 'none'; }
+  }, 400);
+};
+
+window.selectAddress = (label, box) => {
+  document.getElementById('setup-address').value = label;
+  box.style.display = 'none';
+};
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('#address-suggestions') && e.target.id !== 'setup-address') {
+    const box = document.getElementById('address-suggestions');
+    if (box) box.style.display = 'none';
+  }
+});
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js');
+  });
+}
+</script>
+</body>
+</html>
