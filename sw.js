@@ -1,10 +1,10 @@
 const CACHE_NAME = 'vaad-bait-plus-v1';
 const ASSETS = [
-  '/vaadglobal/',
-  '/vaadglobal/index.html',
-  '/vaadglobal/manifest.json',
-  '/vaadglobal/icon-192.png',
-  '/vaadglobal/icon-512.png'
+  '/vaadplustemp/',
+  '/vaadplustemp/index.html',
+  '/vaadplustemp/manifest.json',
+  '/vaadplustemp/icon-192.png',
+  '/vaadplustemp/icon-512.png'
 ];
 
 self.addEventListener('install', e => {
