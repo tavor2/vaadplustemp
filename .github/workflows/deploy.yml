@@ -1,0 +1,45 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Prepare publishing assets
+        run: |
+          mkdir -p dist
+          cp index.html dist/index.html
+          cp manifest.json dist/manifest.json
+          cp sw.js dist/sw.js
+          cp icon-192.png dist/icon-192.png
+          cp icon-512.png dist/icon-512.png
+
+      - name: Inject Firebase API Key
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('dist/index.html')
+          html = p.read_text(encoding='utf-8')
+          html = html.replace('__FIREBASE_API_KEY__', '${{ secrets.FIREBASE_API_KEY }}')
+          p.write_text(html, encoding='utf-8')
+          PY
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          publish_branch: gh-pages
+          allow_empty_commit: false
