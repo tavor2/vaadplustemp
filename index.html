@@ -565,7 +565,7 @@
     <div id="backup-section" style="display:none;padding:0 16px 24px;">
       <div class="section-header"><div class="section-title">גיבוי ושחזור</div></div>
       <div style="display:flex;gap:10px;">
-        <button class="btn-icon" style="flex:1;" onclick="exportData()">⬇️ גיבוי 👑</button>
+        <button class="btn-icon" style="flex:1;" onclick="exportData()">⬇️ גיבוי</button>
         <button class="btn-icon" style="flex:1;" onclick="document.getElementById('import-file-input').click()">⬆️ שחזור</button>
       </div>
       <input type="file" id="import-file-input" accept="application/json" style="display:none" onchange="importData(event)"/>
@@ -973,7 +973,7 @@
       </div>
     </div>
     <div id="premium-launch-msg" style="display:none;background:var(--blue-light);border-radius:10px;padding:12px 14px;margin-bottom:14px;font-size:13px;line-height:1.7;text-align:right;color:var(--gray-800);">
-      כמה כלים מתקדמים (📋 לוג, 📄 דוח PDF, 📊 אקסל, 💾 גיבוי) פתוחים לכם בחינם לתקופת ניסיון. נשמח לשמוע מה דעתכם 😊
+      כמה כלים מתקדמים (📋 לוג, 📄 דוח PDF, 📊 אקסל) פתוחים לכם בחינם לתקופת ניסיון. נשמח לשמוע מה דעתכם 😊
     </div>
     <div style="display:flex;flex-direction:column;gap:10px;">
       <button class="btn-primary" onclick="closeAdminFinance();openAddPayment();">➕ הוסף תשלום</button>
@@ -1002,7 +1002,7 @@
       </div>
       <hr style="border:none;border-top:1px solid #eee;margin:4px 0;"/>
       <div style="display:flex;gap:8px;">
-        <button class="btn-icon" style="flex:1;" onclick="closeAdminFinance();exportData()">⬇️ גיבוי 👑</button>
+        <button class="btn-icon" style="flex:1;" onclick="closeAdminFinance();exportData()">⬇️ גיבוי</button>
         <button class="btn-icon" style="flex:1;" onclick="closeAdminFinance();document.getElementById('import-file-input').click()">⬆️ שחזור</button>
       </div>
       <button class="btn-secondary" style="color:#d33;border-color:#d33;" onclick="closeAdminFinance();openResetData()">🗑️ איפוס נתונים</button>
@@ -1129,13 +1129,30 @@
   <div class="modal" style="text-align:center;">
     <div style="font-size:48px;margin-bottom:12px;">👑</div>
     <div class="modal-title">גרסת פרימיום</div>
-    <div style="font-size:14px;color:var(--gray-600);line-height:1.8;margin-bottom:20px;">
-      הפיצ'ר הזה זמין בגרסת הפרימיום.<br/>
-      צור קשר עם התמיכה לשדרוג:
+    <div style="font-size:14px;color:var(--gray-600);line-height:1.8;margin-bottom:16px;" id="premium-modal-desc">
+      הפיצ'ר הזה זמין בגרסת הפרימיום.
     </div>
-    <a href="mailto:vaadplus100@gmail.com" style="display:block;background:var(--blue);color:white;border-radius:var(--radius);padding:14px;font-size:15px;font-weight:700;text-decoration:none;margin-bottom:10px;">
-      📧 צור קשר לשדרוג
-    </a>
+
+    <!-- Shown only when running inside the Google Play app (Digital Goods API available) -->
+    <div id="premium-play-purchase" style="display:none;">
+      <div style="background:var(--blue-light);border-radius:var(--radius);padding:16px;margin-bottom:14px;">
+        <div style="font-size:13px;color:var(--gray-600);margin-bottom:4px;">מנוי שנתי</div>
+        <div style="font-size:28px;font-weight:800;color:var(--blue);" id="premium-price-display">₪119 / שנה</div>
+      </div>
+      <button class="btn-primary" id="btn-buy-premium" onclick="purchasePremium()">💳 רכוש מנוי דרך Google Play</button>
+      <div id="premium-purchase-status" style="font-size:13px;color:var(--gray-600);margin-top:10px;min-height:18px;"></div>
+    </div>
+
+    <!-- Fallback for users on the regular browser (not the Play Store app) -->
+    <div id="premium-email-fallback" style="display:none;">
+      <div style="font-size:13px;color:var(--gray-400);margin-bottom:10px;">
+        רכישה בתוך האפליקציה זמינה רק בגרסה מ-Google Play. בינתיים אפשר ליצור קשר:
+      </div>
+      <a href="mailto:vaadplus100@gmail.com" style="display:block;background:var(--blue);color:white;border-radius:var(--radius);padding:14px;font-size:15px;font-weight:700;text-decoration:none;margin-bottom:10px;">
+        📧 צור קשר לשדרוג
+      </a>
+    </div>
+
     <button class="btn-secondary" onclick="closeModal('modal-premium-upgrade')">סגור</button>
   </div>
 </div>
@@ -1205,6 +1222,8 @@ import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signO
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 import { getFirestore, collection, doc, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp, Timestamp, runTransaction }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getFunctions, httpsCallable }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js";
 
   
 const firebaseConfig = {
@@ -1219,6 +1238,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const functions = getFunctions(app);
 
 // ===== STATE =====
 let currentUser = null;
@@ -1450,7 +1470,7 @@ window.confirmDeleteBuilding = async () => {
 };
 
 // ===== SUPER ADMIN =====
-const APP_VERSION = '1.5.5'; // תיקון: Super Admin רואה דיירים/כספים, קבלות PDF, כפתור "סמן כשולם", אייקון פעמון, מודאל ביטול מותאם
+const APP_VERSION = '1.6.0'; // הוספת רכישת פרימיום אמיתית דרך Google Play Billing (Digital Goods API + Cloud Function verification)
 const SUPER_ADMIN_EMAIL = 'vaadplus100@gmail.com';
 const MY_BUILDING_ADDRESS = 'זרחין 10, רעננה ';
 const TRIAL_DAYS = 90;
@@ -1474,12 +1494,95 @@ function daysLeftInTrial() {
   return Math.max(0, Math.round(TRIAL_DAYS - daysPassed));
 }
 
+// ===== GOOGLE PLAY BILLING =====
+const PLAY_SUBSCRIPTION_ID = 'vaadplus_premium_yearly'; // must match the product ID created in Play Console
+const PLAY_BILLING_METHOD = 'https://play.google.com/billing';
+
+function isPlayBillingAvailable() {
+  // Digital Goods API is only exposed when running inside the TWA served
+  // via the Play Store (verified by assetlinks.json). Regular browser
+  // visits (e.g. tavor2.github.io directly) will not have this API.
+  return 'getDigitalGoodsService' in window;
+}
+
 function premiumGate(featureName) {
   if (isPremium()) return true;
   showToast(`🔒 ${featureName} זמין בגרסת פרימיום`);
-  setTimeout(() => openModal('modal-premium-upgrade'), 500);
+  setTimeout(() => openPremiumModal(), 500);
   return false;
 }
+
+function openPremiumModal() {
+  const playSection = document.getElementById('premium-play-purchase');
+  const emailSection = document.getElementById('premium-email-fallback');
+  const statusEl = document.getElementById('premium-purchase-status');
+  statusEl.textContent = '';
+  if (isPlayBillingAvailable()) {
+    playSection.style.display = 'block';
+    emailSection.style.display = 'none';
+  } else {
+    playSection.style.display = 'none';
+    emailSection.style.display = 'block';
+  }
+  openModal('modal-premium-upgrade');
+}
+
+window.purchasePremium = async () => {
+  const statusEl = document.getElementById('premium-purchase-status');
+  const btn = document.getElementById('btn-buy-premium');
+  if (!buildingId) { showToast('שגיאה: לא נמצא בניין'); return; }
+  if (!isPlayBillingAvailable()) { showToast('רכישה זמינה רק דרך גרסת Google Play'); return; }
+
+  btn.disabled = true;
+  statusEl.textContent = 'פותח את חלון התשלום של Google...';
+
+  try {
+    const service = await window.getDigitalGoodsService(PLAY_BILLING_METHOD);
+    const details = await service.getDetails([PLAY_SUBSCRIPTION_ID]);
+    if (!details || !details.length) {
+      throw new Error('מוצר המנוי לא נמצא ב-Google Play (בדוק/י שהמנוי מוגדר ופעיל בקונסולה)');
+    }
+
+    const paymentMethods = [{
+      supportedMethods: PLAY_BILLING_METHOD,
+      data: { sku: PLAY_SUBSCRIPTION_ID }
+    }];
+    const request = new PaymentRequest(paymentMethods);
+    const paymentResponse = await request.show();
+    const purchaseToken = paymentResponse.details.purchaseToken;
+
+    statusEl.textContent = 'מאמת את התשלום מול Google...';
+
+    const verify = httpsCallable(functions, 'verifyPlayPurchase');
+    const result = await verify({
+      buildingId,
+      purchaseToken,
+      subscriptionId: PLAY_SUBSCRIPTION_ID
+    });
+
+    await paymentResponse.complete('success');
+
+    if (result.data?.success) {
+      // Refresh local building data so isPremium() reflects the purchase immediately
+      const bSnap = await getDoc(doc(db, 'buildings', buildingId));
+      buildingData = bSnap.data();
+      statusEl.textContent = '';
+      showToast('🎉 הפרימיום הופעל בהצלחה!');
+      closeModal('modal-premium-upgrade');
+    } else {
+      statusEl.textContent = 'האימות נכשל, נסה/י שוב או פני/ה לתמיכה';
+    }
+  } catch (e) {
+    console.error('Purchase failed', e);
+    if (e?.code === 'cancel' || /cancel/i.test(e?.message || '')) {
+      statusEl.textContent = 'הרכישה בוטלה';
+    } else {
+      statusEl.textContent = 'שגיאה ברכישה: ' + (e.message || 'נסה/י שוב מאוחר יותר');
+    }
+  } finally {
+    btn.disabled = false;
+  }
+};
 
 window.showSuperAdminScreen = () => {
   document.getElementById('supervisor-screen').style.display = 'none';
@@ -2057,7 +2160,6 @@ window.executeResetData = async () => {
 };
 
 window.exportData = async () => {
-  if (!premiumGate('גיבוי נתונים')) return;
   try {
     showToast('מייצא נתונים...');
     const collections = ['residents','payments','expenses','issues','announcements'];
@@ -3069,7 +3171,7 @@ async function createPDFReport() {
       <h1 style="letter-spacing:4px;">דוח תשלומים לוועד הבית</h1>
       <h2>${(buildingData?.address || '').replace(/ /g, '\u00A0')}</h2>
       <h2>שנה&nbsp;${year}</h2>
-      <h2 style="font-size:13px;color:#999;">${(() => { const now = new Date(); return 'הופק ' + now.toLocaleDateString('he-IL') + ' בשעה ' + now.toLocaleTimeString('he-IL', {hour:'2-digit',minute:'2-digit'}); })()}</h2>
+      <h2 style="font-size:13px;color:#999;">${(() => { const now = new Date(); return 'הופק ' + now.toLocaleDateString('he-IL') + ' בשעה ' + now.toLocaleTimeString('he-IL', {hour:'2-digit',minute:'2-digit'}); })()}</h2>
       
       <table>
         <thead>
@@ -3129,9 +3231,9 @@ async function createPDFReport() {
       </table>
 
       <div class="summary">
-        ${openingBalance ? `<div class="summary-line"><span class="total">סה"כ איזון חד פעמי מול הבנק:</span> ₪${openingBalance.toLocaleString('he-IL')}</div>` : ''}
-        <div class="summary-line"><span class="total">סה"כ הכנסות:</span> ₪${totalCollected.toLocaleString('he-IL')}</div>
-        <div class="summary-line"><span class="total">סה"כ הוצאות:</span> ₪${totalExpenses.toLocaleString('he-IL')}</div>
+        ${openingBalance ? `<div class="summary-line"><span class="total">סה"כ איזון חד פעמי מול הבנק:</span> ₪${openingBalance.toLocaleString('he-IL')}</div>` : ''}
+        <div class="summary-line"><span class="total">סה"כ הכנסות:</span> ₪${totalCollected.toLocaleString('he-IL')}</div>
+        <div class="summary-line"><span class="total">סה"כ הוצאות:</span> ₪${totalExpenses.toLocaleString('he-IL')}</div>
         <div style="border-top:2px solid #000;margin:15px 0;padding:10px 0;">
           <div class="summary-line"><span class="total">יתרה&nbsp;בחשבון&nbsp;הבנק</span> &#8362;${bankBalance.toLocaleString('he-IL')}</div>
           <div class="summary-line"><span class="total">יתרת&nbsp;מזומן</span> &#8362;${cashBalance.toLocaleString('he-IL')}</div>
