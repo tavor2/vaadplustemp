@@ -1220,7 +1220,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-import { getFirestore, collection, doc, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp, Timestamp, runTransaction }
+import { initializeFirestore, persistentLocalCache, persistentSingleTabManager, collection, doc, getDoc, getDocs, addDoc, setDoc, updateDoc, deleteDoc, query, where, orderBy, onSnapshot, serverTimestamp, Timestamp, runTransaction }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getFunctions, httpsCallable }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js";
@@ -1237,7 +1237,16 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+// Persistent local cache (IndexedDB): data already seen by this device
+// survives closing the app/tab. Combined with onSnapshot listeners below,
+// reopening the app serves the last-known state instantly from disk and
+// only pulls the delta from the server, instead of re-reading everything.
+// forceOwnership:false means if the app is somehow open in two tabs at
+// once, the second tab quietly falls back to memory-only cache instead of
+// throwing an error.
+const db = initializeFirestore(app, {
+  localCache: persistentLocalCache({ tabManager: persistentSingleTabManager({ forceOwnership: false }) })
+});
 const functions = getFunctions(app);
 
 // ===== STATE =====
@@ -1250,6 +1259,8 @@ let allResidents = [];
 let allIssues = [];
 let allAnnouncements = [];
 let allPayments = [];
+let unsubPayments = null; // active onSnapshot listener for the currently-viewed payments month
+let currentPaymentsYm = null; // buildingId+month key that listener is currently subscribed to
 let currentIssueFilter = 'all';
 let currentResView = 'table';
 let currentPayView = 'overview';
@@ -1470,7 +1481,7 @@ window.confirmDeleteBuilding = async () => {
 };
 
 // ===== SUPER ADMIN =====
-const APP_VERSION = '1.6.0'; // הוספת רכישת פרימיום אמיתית דרך Google Play Billing (Digital Goods API + Cloud Function verification)
+const APP_VERSION = '1.6.4'; // לשונית הוצאות עוברת ל-listener משותף עם המאזן - אותו תיקון גלגל טעינה כמו במאזן
 const SUPER_ADMIN_EMAIL = 'vaadplus100@gmail.com';
 const MY_BUILDING_ADDRESS = 'זרחין 10, רעננה ';
 const TRIAL_DAYS = 90;
@@ -2310,11 +2321,23 @@ window.saveResident = async () => {
     closeModal('modal-resident');
   } catch(e) { showToast('שגיאה: ' + e.message); }
 };
-window.loadPayments = async () => {
+window.loadPayments = () => {
   const ym = document.getElementById('payment-month-select').value;
-  const snap = await getDocs(query(collection(db, 'buildings', buildingId, 'payments'), where('month','==',ym)));
-  allPayments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  renderPayments(ym);
+  const listenerKey = buildingId + '|' + ym;
+  if (unsubPayments && currentPaymentsYm === listenerKey) {
+    // Already subscribed to this exact building+month — re-render with what we have, no new listener needed.
+    renderPayments(ym);
+    return;
+  }
+  if (unsubPayments) { unsubPayments(); unsubPayments = null; }
+  currentPaymentsYm = listenerKey;
+  unsubPayments = onSnapshot(
+    query(collection(db, 'buildings', buildingId, 'payments'), where('month','==',ym)),
+    (snap) => {
+      allPayments = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderPayments(ym);
+    }
+  );
 };
 
 function renderPayments(ym) {
@@ -2642,18 +2665,36 @@ window.savePayment = async () => {
 
 // ===== EXPENSES =====
 let allExpenses = [];
+let unsubExpenses = null;
+let expensesListenerBuildingId = null; // which building the expenses listener is attached to
+
+function ensureExpensesListener() {
+  if (expensesListenerBuildingId === buildingId && unsubExpenses) return; // already listening for this building
+  if (unsubExpenses) unsubExpenses();
+  expensesListenerBuildingId = buildingId;
+  unsubExpenses = onSnapshot(
+    query(collection(db, 'buildings', buildingId, 'expenses'), orderBy('date','desc')),
+    (snap) => {
+      allExpenses = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderExpenses();
+      renderBalance();
+    }
+  );
+}
 
 function loadExpenses() {
   const container = document.getElementById('expenses-list');
-  container.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
-  getDocs(query(collection(db, 'buildings', buildingId, 'expenses'), orderBy('date','desc'))).then(snap => {
-    allExpenses = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    renderExpenses();
-  });
+  const alreadyListening = expensesListenerBuildingId === buildingId && unsubExpenses;
+  if (!alreadyListening) {
+    container.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
+  }
+  ensureExpensesListener();
+  if (alreadyListening) renderExpenses(); // instant re-render from cache, no new server read
 }
 
 function renderExpenses() {
   const container = document.getElementById('expenses-list');
+  if (!container) return;
   if (!allExpenses.length) {
     container.innerHTML = '<div class="card-empty" style="margin:16px;">אין הוצאות רשומות</div>';
     return;
@@ -2750,29 +2791,55 @@ window.deleteExpense = async (id) => {
 };
 
 // ===== BALANCE =====
-async function loadBalance() {
+let balPaymentsAll = [];      // cache: all payments ever recorded (for balance calc)
+let balDepositsAll = [];      // cache: all cash deposits ever recorded
+let unsubBalPayments = null, unsubBalDeposits = null;
+let balanceListenersBuildingId = null; // which building the above listeners are attached to
+
+function ensureBalanceListeners() {
+  ensureExpensesListener(); // shared with the expenses tab — one listener, not two
+  if (balanceListenersBuildingId === buildingId && unsubBalPayments) return; // already listening for this building
+  if (unsubBalPayments) unsubBalPayments();
+  if (unsubBalDeposits) unsubBalDeposits();
+  balanceListenersBuildingId = buildingId;
+
+  unsubBalPayments = onSnapshot(collection(db, 'buildings', buildingId, 'payments'), (snap) => {
+    balPaymentsAll = snap.docs.map(d => d.data());
+    renderBalance();
+  });
+  // הפקדות מזומן לבנק — רק מנהל יכול לקרוא, לכן מטפלים בשגיאת הרשאה בעדינות
+  unsubBalDeposits = onSnapshot(
+    collection(db, 'buildings', buildingId, 'cashDeposits'),
+    (snap) => { balDepositsAll = snap.docs.map(d => d.data()); renderBalance(); },
+    () => { balDepositsAll = []; renderBalance(); }
+  );
+}
+
+function loadBalance() {
   const container = document.getElementById('balance-content');
-  container.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
+  const alreadyListening = balanceListenersBuildingId === buildingId && unsubBalPayments;
+  if (!alreadyListening) {
+    container.innerHTML = '<div class="spinner-wrap"><div class="spinner"></div></div>';
+  }
+  ensureBalanceListeners();
+  if (alreadyListening) renderBalance(); // instant re-render from cache, no new server read
+}
+
+function renderBalance() {
+  const container = document.getElementById('balance-content');
+  if (!container) return;
 
   // Total collected (all time)
-  const paySnap = await getDocs(collection(db, 'buildings', buildingId, 'payments'));
-  const totalCollected = paySnap.docs.reduce((s,d) => s + (d.data().amount||0), 0);
-  const cashCollected = paySnap.docs.filter(d => d.data().method === 'cash').reduce((s,d) => s + (d.data().amount||0), 0);
+  const totalCollected = balPaymentsAll.reduce((s,p) => s + (p.amount||0), 0);
+  const cashCollected = balPaymentsAll.filter(p => p.method === 'cash').reduce((s,p) => s + (p.amount||0), 0);
   const transferCollected = totalCollected - cashCollected;
 
   // Total expenses (all time)
-  const expSnap = await getDocs(collection(db, 'buildings', buildingId, 'expenses'));
-  const totalExpenses = expSnap.docs.reduce((s,d) => s + (d.data().amount||0), 0);
-  const cashExpenses = expSnap.docs.filter(d => d.data().method === 'cash').reduce((s,d) => s + (d.data().amount||0), 0);
+  const totalExpenses = allExpenses.reduce((s,e) => s + (e.amount||0), 0);
+  const cashExpenses = allExpenses.filter(e => e.method === 'cash').reduce((s,e) => s + (e.amount||0), 0);
   const bankExpenses = totalExpenses - cashExpenses;
-  allExpenses = expSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-  // הפקדות מזומן לבנק — רק מנהל יכול לקרוא
-  let totalDeposits = 0;
-  try {
-    const depositSnap = await getDocs(collection(db, 'buildings', buildingId, 'cashDeposits'));
-    totalDeposits = depositSnap.docs.reduce((s,d) => s + (d.data().amount||0), 0);
-  } catch(e) { totalDeposits = 0; }
+  const totalDeposits = balDepositsAll.reduce((s,d) => s + (d.amount||0), 0);
 
   const openingBalance = buildingData?.openingBalance || 0;
   const bankBalance = openingBalance + transferCollected + totalDeposits - bankExpenses;
@@ -2809,7 +2876,7 @@ async function loadBalance() {
     + '</div>';
   // Expenses by category
   if (Object.keys(byCat).length) {
-    html += '<div style="font-size:15px;font-weight:700;margin-bottom:10px;">פירוט הוצאות לפי קטגוריה</div>';
+    html += '<div style="font-size:15px;font-weight:700;margin-bottom:10px;">פירוט הוצאות לפי קטגוריה</div>';
     Object.entries(byCat).sort((a,b)=>b[1]-a[1]).forEach(([cat,amt]) => {
       const icon = catIcons[cat]||'📋';
       const pct = totalExpenses > 0 ? Math.round(amt/totalExpenses*100) : 0;
@@ -2822,7 +2889,7 @@ async function loadBalance() {
     });
     
     // Expenses detail table
-    html += '<div style="font-size:15px;font-weight:700;margin-top:20px;margin-bottom:10px;">פירוט הוצאות</div>';
+    html += '<div style="font-size:15px;font-weight:700;margin-top:20px;margin-bottom:10px;">פירוט הוצאות</div>';
     html += '<div style="overflow-x:auto;">'
       + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
       + '<thead><tr style="background-color:var(--blue);color:white;">'
@@ -3171,7 +3238,7 @@ async function createPDFReport() {
       <h1 style="letter-spacing:4px;">דוח תשלומים לוועד הבית</h1>
       <h2>${(buildingData?.address || '').replace(/ /g, '\u00A0')}</h2>
       <h2>שנה&nbsp;${year}</h2>
-      <h2 style="font-size:13px;color:#999;">${(() => { const now = new Date(); return 'הופק ' + now.toLocaleDateString('he-IL') + ' בשעה ' + now.toLocaleTimeString('he-IL', {hour:'2-digit',minute:'2-digit'}); })()}</h2>
+      <h2 style="font-size:13px;color:#999;">${(() => { const now = new Date(); const d = now.toLocaleDateString('he-IL'); const t = now.toLocaleTimeString('he-IL', {hour:'2-digit',minute:'2-digit'}); return 'הופק <span dir="ltr" style="unicode-bidi:isolate">' + d + '</span> בשעה <span dir="ltr" style="unicode-bidi:isolate">' + t + '</span>'; })()}</h2>
       
       <table>
         <thead>
@@ -3400,32 +3467,30 @@ window.generateReceipt = async (apt, name, fee, ym, paymentId) => {
     const today = new Date().toLocaleDateString('he-IL');
 
     const html = `
-    <html><head><meta charset="utf-8"/>
     <style>
-      * { box-sizing: border-box; margin: 0; padding: 0; }
-      body { font-family: Arial, Helvetica, sans-serif; direction: rtl; color: #1a1a2e; background: white; padding: 0; }
-      .page { width: 148mm; min-height: 105mm; padding: 10mm 12mm; position: relative; }
-      .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #1A56DB; padding-bottom: 8px; margin-bottom: 10px; }
-      .logo-area { display: flex; align-items: center; gap: 10px; }
-      .logo-icon { width: 44px; height: 44px; background: #1A56DB; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
-      .logo-text { font-size: 20px; font-weight: 900; color: #1A56DB; letter-spacing: -0.5px; }
-      .logo-sub { font-size: 10px; color: #6b7280; margin-top: 1px; }
-      .receipt-label { text-align: left; }
-      .receipt-word { font-size: 22px; font-weight: 900; color: #1A56DB; letter-spacing: 1px; }
-      .receipt-num { font-size: 11px; color: #6b7280; margin-top: 2px; }
-      .body-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; margin-bottom: 12px; }
-      .field { display: flex; flex-direction: column; gap: 1px; }
-      .field-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; color: #9ca3af; font-weight: 600; }
-      .field-value { font-size: 13px; font-weight: 700; color: #111827; }
-      .amount-box { background: #EBF2FF; border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-      .amount-label { font-size: 11px; color: #1A56DB; font-weight: 700; }
-      .amount-value { font-size: 28px; font-weight: 900; color: #1A56DB; }
-      .footer { border-top: 1px solid #e5e7eb; padding-top: 8px; display: flex; justify-content: space-between; align-items: center; }
-      .footer-text { font-size: 9px; color: #9ca3af; }
-      .stamp { border: 2px solid #0E9F6E; border-radius: 8px; padding: 4px 10px; color: #0E9F6E; font-size: 11px; font-weight: 800; letter-spacing: 1px; }
+      .receipt-page * { box-sizing: border-box; margin: 0; padding: 0; }
+      .receipt-page { font-family: Arial, Helvetica, sans-serif; direction: rtl; color: #1a1a2e; background: white; }
+      .receipt-page.page { width: 148mm; min-height: 105mm; padding: 10mm 12mm; position: relative; }
+      .receipt-page .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 3px solid #1A56DB; padding-bottom: 8px; margin-bottom: 10px; }
+      .receipt-page .logo-area { display: flex; align-items: center; gap: 10px; }
+      .receipt-page .logo-icon { width: 44px; height: 44px; background: #1A56DB; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+      .receipt-page .logo-text { font-size: 20px; font-weight: 900; color: #1A56DB; letter-spacing: -0.5px; }
+      .receipt-page .logo-sub { font-size: 10px; color: #6b7280; margin-top: 1px; }
+      .receipt-page .receipt-label { text-align: left; }
+      .receipt-page .receipt-word { font-size: 22px; font-weight: 900; color: #1A56DB; letter-spacing: 1px; }
+      .receipt-page .receipt-num { font-size: 11px; color: #6b7280; margin-top: 2px; }
+      .receipt-page .body-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; margin-bottom: 12px; }
+      .receipt-page .field { display: flex; flex-direction: column; gap: 1px; }
+      .receipt-page .field-label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.8px; color: #9ca3af; font-weight: 600; }
+      .receipt-page .field-value { font-size: 13px; font-weight: 700; color: #111827; }
+      .receipt-page .amount-box { background: #EBF2FF; border-radius: 10px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+      .receipt-page .amount-label { font-size: 11px; color: #1A56DB; font-weight: 700; }
+      .receipt-page .amount-value { font-size: 28px; font-weight: 900; color: #1A56DB; }
+      .receipt-page .footer { border-top: 1px solid #e5e7eb; padding-top: 8px; display: flex; justify-content: space-between; align-items: center; }
+      .receipt-page .footer-text { font-size: 9px; color: #9ca3af; }
+      .receipt-page .stamp { border: 2px solid #0E9F6E; border-radius: 8px; padding: 4px 10px; color: #0E9F6E; font-size: 11px; font-weight: 800; letter-spacing: 1px; }
     </style>
-    </head><body>
-    <div class="page">
+    <div class="receipt-page page">
       <div class="header">
         <div class="logo-area">
           <div class="logo-icon">🏢</div>
@@ -3456,10 +3521,10 @@ window.generateReceipt = async (apt, name, fee, ym, paymentId) => {
         <div class="footer-text">מסמך זה מהווה אסמכתא לתשלום דמי ועד בית</div>
         <div class="stamp">✓ שולם</div>
       </div>
-    </div>
-    </body></html>`;
+    </div>`;
 
     const el = document.createElement('div');
+    el.style.width = '148mm';
     el.innerHTML = html;
 
     const pdfContainer = document.getElementById('pdf-container');
