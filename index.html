@@ -1022,7 +1022,7 @@
 <!-- Custom Confirm Modal (avoids native browser confirm() showing the site URL) -->
 <div class="modal-overlay" id="modal-confirm">
   <div class="modal" style="max-width:340px;">
-    <div class="modal-title" id="confirm-message" style="font-size:16px;"></div>
+    <div class="modal-title" id="confirm-message" style="font-size:16px;white-space:pre-line;"></div>
     <div style="display:flex;gap:10px;">
       <button class="btn-secondary" style="flex:1;margin-top:0;" onclick="resolveConfirm(false)">ביטול</button>
       <button class="btn-danger" style="flex:1;padding:13px;" onclick="resolveConfirm(true)">אישור</button>
@@ -1063,7 +1063,7 @@
     <div class="modal-title">מדיניות פרטיות</div>
     <div style="font-size:13px;color:#333;text-align:right;direction:rtl;">
 
-      <div style="font-size:12px;color:#9CA3AF;text-align:center;margin-bottom:16px;">תאריך עדכון אחרון: 21.6.2026</div>
+      <div style="font-size:12px;color:#9CA3AF;text-align:center;margin-bottom:16px;">תאריך עדכון אחרון: 2.7.2026</div>
 
       <div style="margin-bottom:14px;line-height:1.8;">
         אפליקציית ועד בית פלוס פותחה כדי לסייע לדיירים וחברי ועד בית לנהל את הבניין המשותף בצורה יעילה. אנו מכבדים את פרטיותך ומחויבים להגן עליה. מסמך זה מפרט כיצד אנו אוספים, משתמשים ושומרים את המידע שלך.
@@ -1075,7 +1075,7 @@
         <ul style="list-style:none;padding:0;margin-top:6px;">
           <li style="padding:4px 0;padding-right:16px;position:relative;"><span style="position:absolute;right:0;color:#1A56DB;font-weight:700;">•</span><strong>פרטי משתמש:</strong> שם מלא, מספר טלפון, וכתובת דוא"ל.</li>
           <li style="padding:4px 0;padding-right:16px;position:relative;"><span style="position:absolute;right:0;color:#1A56DB;font-weight:700;">•</span><strong>פרטי דירה:</strong> מספר דירה ומצב תשלומים (רלוונטי לוועד הבית בלבד).</li>
-          <li style="padding:4px 0;padding-right:16px;position:relative;"><span style="position:absolute;right:0;color:#1A56DB;font-weight:700;">•</span><strong>מידע טכני:</strong> נתונים אודות השימוש באפליקציה (כגון גרסת מערכת ההפעלה, תקלות אפשריות).</li>
+          <li style="padding:4px 0;padding-right:16px;position:relative;"><span style="position:absolute;right:0;color:#1A56DB;font-weight:700;">•</span><strong>מידע טכני ואנליטיקה:</strong> נתונים אודות השימוש באפליקציה (כגון גרסת מערכת ההפעלה, תקלות אפשריות, ואילו פיצ'רים נמצאים בשימוש) — לצורך שיפור השירות, באמצעות Google Analytics for Firebase. מידע זה אינו כולל שמות, טלפונים או תוכן אישי של דיירים.</li>
         </ul>
       </div>
 
@@ -1224,15 +1224,21 @@ import { initializeFirestore, persistentLocalCache, persistentSingleTabManager, 
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 import { getFunctions, httpsCallable }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js";
+import { getAnalytics, logEvent, isSupported as analyticsIsSupported }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-analytics.js";
 
   
 const firebaseConfig = {
-  apiKey: "AIzaSyBUGF8SWdjPg0NSwOlapu_vYnx740fQy9s",
-  authDomain: "vaadplus-c0cc1.firebaseapp.com",
-  projectId: "vaadplus-c0cc1",
-  storageBucket: "vaadplus-c0cc1.firebasestorage.app",
-  messagingSenderId: "369349440346",
-  appId: "1:369349440346:web:4aa1d03e44f9ffa46b7963"
+  apiKey: "AIzaSyBUGF8SWdjPg0NSwOlapu_vYnx740fQy9s",
+  authDomain: "vaadplus-c0cc1.firebaseapp.com",
+  projectId: "vaadplus-c0cc1",
+  storageBucket: "vaadplus-c0cc1.firebasestorage.app",
+  messagingSenderId: "369349440346",
+  appId: "1:369349440346:web:4aa1d03e44f9ffa46b7963",
+  measurementId: "G-XXXXXXXXXX" // TODO: replace with the real value from
+  // Firebase Console -> Project Settings -> General -> scroll to "Your apps" ->
+  // the web app's config snippet. Without the correct measurementId,
+  // Analytics silently does nothing (no error, just no data collected).
 };
 
 const app = initializeApp(firebaseConfig);
@@ -1248,6 +1254,16 @@ const db = initializeFirestore(app, {
   localCache: persistentLocalCache({ tabManager: persistentSingleTabManager({ forceOwnership: false }) })
 });
 const functions = getFunctions(app);
+
+// Google Analytics -- guarded with isSupported() because some WebView/TWA
+// contexts (or blocked storage / private browsing) don't support it, and
+// calling getAnalytics() directly there would throw. logAnalyticsEvent()
+// below is a safe no-op wrapper to use everywhere else in the app.
+let analytics = null;
+analyticsIsSupported().then((ok) => { if (ok) analytics = getAnalytics(app); }).catch(() => {});
+function logAnalyticsEvent(name, params) {
+  try { if (analytics) logEvent(analytics, name, params); } catch(e) { /* never let analytics break the app */ }
+}
 
 // ===== STATE =====
 let currentUser = null;
@@ -1419,13 +1435,14 @@ onAuthStateChanged(auth, async (user) => {
   loadAll();
 });
 
-window.resetAllData = () => {
+window.resetAllData = async () => {
   if (auth.currentUser?.email !== 'vaadplus100@gmail.com') {
     showToast('פעולה זו מוגבלת ל-Super Admin בלבד');
     return;
   }
   // תמיד מחייב גיבוי לפני מחיקה
-  if (!confirm(`⚠️ לפני מחיקת הבניין חובה לגבות!\n\nכתובת: ${buildingData?.address || ''}\n\nלחץ אישור כדי לגבות עכשיו, ואחר כך תוכל למחוק.`)) return;
+  const ok = await customConfirm(`⚠️ לפני מחיקת הבניין חובה לגבות!\n\nכתובת: ${buildingData?.address || ''}\n\nלחץ אישור כדי לגבות עכשיו, ואחר כך תוכל למחוק.`);
+  if (!ok) return;
   exportData();
   // אחרי הגיבוי — הצג את מודל המחיקה
   setTimeout(() => {
@@ -1481,7 +1498,7 @@ window.confirmDeleteBuilding = async () => {
 };
 
 // ===== SUPER ADMIN =====
-const APP_VERSION = '1.6.4'; // לשונית הוצאות עוברת ל-listener משותף עם המאזן - אותו תיקון גלגל טעינה כמו במאזן
+const APP_VERSION = '1.7.1'; // כל דיאלוגי המחיקה/אישור עברו למודל מותאם - אין יותר חשיפת כתובת האתר בשום מקום
 const SUPER_ADMIN_EMAIL = 'vaadplus100@gmail.com';
 const MY_BUILDING_ADDRESS = 'זרחין 10, רעננה ';
 const TRIAL_DAYS = 90;
@@ -1580,6 +1597,7 @@ window.purchasePremium = async () => {
       statusEl.textContent = '';
       showToast('🎉 הפרימיום הופעל בהצלחה!');
       closeModal('modal-premium-upgrade');
+      logAnalyticsEvent('purchase', { currency: 'ILS', value: 119, items: [{ item_id: PLAY_SUBSCRIPTION_ID, item_name: 'מנוי פרימיום שנתי' }] });
     } else {
       statusEl.textContent = 'האימות נכשל, נסה/י שוב או פני/ה לתמיכה';
     }
@@ -1758,7 +1776,7 @@ window.executeRestoreBuilding = async (event) => {
       return;
     }
 
-    if (!confirm(`שחזור בניין:\n${info.address}\nמנהל: ${info.adminName} (${info.adminEmail})\n\nלהמשיך?`)) return;
+    if (!(await customConfirm(`שחזור בניין:\n${info.address}\nמנהל: ${info.adminName} (${info.adminEmail})\n\nלהמשיך?`))) return;
 
     closeModal('modal-restore-building');
     showToast('יוצר בניין...');
@@ -1879,6 +1897,7 @@ window.completeSetup = async () => {
 
     initUI();
     loadAll();
+    logAnalyticsEvent('building_created');
   } catch(e) {
     showToast('שגיאה: ' + e.message);
   }
@@ -1897,6 +1916,7 @@ function initUI() {
   document.getElementById('home-name').textContent = firstName || currentUser.name;
   document.getElementById('home-address').textContent = buildingData?.address || '';
   document.querySelectorAll('#app-version, #app-version-home').forEach(el => el.textContent = APP_VERSION);
+  logAnalyticsEvent('app_open', { role: auth.currentUser?.email === SUPER_ADMIN_EMAIL ? 'super_admin' : (currentUser.role || 'unknown') });
 
   // Admin controls
   // כתר ל-Super Admin בלבד
@@ -2101,7 +2121,7 @@ window.deleteResident = async () => {
 
   const id = document.getElementById('edit-resident-id').value;
   if (!id) return;
-  if (!confirm('למחוק את הדייר? פעולה זו אינה הפיכה.')) return;
+  if (!(await customConfirm('למחוק את הדייר? פעולה זו אינה הפיכה.'))) return;
   try {
     await deleteDoc(doc(db, 'buildings', buildingId, 'residents', id));
     showToast('🗑️ הדייר נמחק');
@@ -2239,7 +2259,7 @@ window.importData = async (event) => {
       return;
     }
 
-    if (!confirm(`הקובץ מכיל ${totalDocs} רשומות.\nהשחזור יוסיף/יעדכן רשומות לפי ה-ID שלהן (לא ימחק נתונים קיימים).\nלהמשיך?`)) return;
+    if (!(await customConfirm(`הקובץ מכיל ${totalDocs} רשומות.\nהשחזור יוסיף/יעדכן רשומות לפי ה-ID שלהן (לא ימחק נתונים קיימים).\nלהמשיך?`))) return;
 
     showToast('מייבא נתונים...');
     let imported = 0;
@@ -2524,6 +2544,7 @@ window.markPaid = async (apt, name, amount) => {
     }
     showToast(`✅ ${name} - תשלום נרשם`);
     loadPayments();
+    logAnalyticsEvent('payment_recorded', { method, value: amount, currency: 'ILS' });
   } catch(e) { showToast('שגיאה: ' + e.message); }
 };
 
@@ -2660,6 +2681,7 @@ window.savePayment = async () => {
     showToast('✅ תשלום נרשם');
     closeModal('modal-payment');
     loadPayments();
+    logAnalyticsEvent('payment_recorded', { method, value: amount, currency: 'ILS' });
   } catch(e) { showToast('שגיאה: ' + e.message); }
 };
 
@@ -2783,7 +2805,7 @@ window.saveExpense = async () => {
 window.deleteExpense = async (id) => {
   if (!isAdmin) { showToast('אין הרשאה'); return; }
 
-  if (!confirm('למחוק הוצאה זו?')) return;
+  if (!(await customConfirm('למחוק הוצאה זו?'))) return;
   await deleteDoc(doc(db, 'buildings', buildingId, 'expenses', id));
   showToast('🗑 נמחק');
   loadExpenses();
@@ -3080,6 +3102,7 @@ window.exportExcel = async () => {
     const addrStr = (buildingData?.address||'').replace(/,\s*/g,'_').replace(/\s+/g,'_');
     XLSX.writeFile(wb, `vaad-${addrStr}-${year}.xlsx`);
     showToast('✅ קובץ אקסל הורד בהצלחה');
+    logAnalyticsEvent('excel_exported');
   } catch(e) { showToast('שגיאה: ' + e.message); }
 };
 
@@ -3328,6 +3351,7 @@ async function createPDFReport() {
   await html2pdf().set(opt).from(element).save();
   pdfContainer.innerHTML = '';
   showToast('📄 דוח PDF הורד בהצלחה');
+  logAnalyticsEvent('pdf_report_generated');
 }
 
 // ===== RESIDENT PAYMENT HISTORY =====
@@ -3541,6 +3565,7 @@ window.generateReceipt = async (apt, name, fee, ym, paymentId) => {
     await html2pdf().set(opt).from(el).save();
     pdfContainer.innerHTML = '';
     showToast('🧾 קבלה הורדה בהצלחה');
+    logAnalyticsEvent('receipt_generated');
   } catch(e) { showToast('שגיאה: ' + e.message); }
 };
 
@@ -3650,7 +3675,7 @@ window.saveIssue = async () => {
 window.deleteIssue = async (id) => {
   if (!isAdmin) { showToast('אין הרשאה'); return; }
 
-  if (!confirm('למחוק את הקריאה?')) return;
+  if (!(await customConfirm('למחוק את הקריאה?'))) return;
   await deleteDoc(doc(db, 'buildings', buildingId, 'issues', id));
   showToast('🗑 קריאה נמחקה');
 };
@@ -3736,7 +3761,7 @@ window.saveAnnounce = async () => {
 window.deleteAnnounce = async (id) => {
   if (!isAdmin) { showToast('אין הרשאה'); return; }
 
-  if (!confirm('למחוק את ההודעה?')) return;
+  if (!(await customConfirm('למחוק את ההודעה?'))) return;
   await deleteDoc(doc(db, 'buildings', buildingId, 'announcements', id));
   showToast('🗑 הודעה נמחקה');
 };
